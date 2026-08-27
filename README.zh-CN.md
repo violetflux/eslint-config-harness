@@ -171,17 +171,19 @@ Kerros 集成包含：
 
 <br>
 
-| Rule | strict | 作用 |
-| --- | --- | --- |
-| `harness/short-jsx-return` | error | 短 JSX return 保持单行 |
-| `harness/named-import-export-layout` | error | 按默认 120 字符统一命名导入导出布局 |
-| `harness/react-hook-order` | error | 统一 React 标准 Hook 阶段顺序，自定义 Hook 按需配置 |
-| `harness/prefer-cn` | warn | 把 `filter(Boolean).join(' ')` class 组合改为 `cn` |
-| `harness/class-name-layout` | warn | 限制过长的静态 class 字符串 |
-| `harness/cn-argument-layout` | warn | 统一 `cn` 静态参数和换行布局 |
-| `harness/prefer-property-shorthand` | warn | 建议提前命名同源转换值并使用属性简写 |
-| `harness/no-redundant-field-alias` | warn | 减少冗余字段别名 |
-| `harness/prefer-local-transformation` | warn | 建议先命名关键派生字段再投影 |
+| Rule | strict | 自动修复 | 作用 |
+| --- | --- | --- | --- |
+| `harness/short-jsx-return` | error | 支持 | 短 JSX return 保持单行 |
+| `harness/named-import-export-layout` | error | 支持 | 按默认 120 字符统一命名导入导出布局 |
+| `harness/react-hook-order` | error | 不支持 | 统一 React 标准 Hook 阶段顺序，自定义 Hook 按需配置 |
+| `harness/prefer-cn` | warn | 部分支持 | 把 `filter(Boolean).join(' ')` class 组合改为 `cn` |
+| `harness/class-name-layout` | warn | 不支持 | 限制过长的静态 class 字符串 |
+| `harness/cn-argument-layout` | warn | 部分支持 | 统一 `cn` 静态参数和换行布局 |
+| `harness/prefer-property-shorthand` | warn | 不支持 | 建议提前命名同源转换值并使用属性简写 |
+| `harness/no-redundant-field-alias` | warn | 不支持 | 减少冗余字段别名 |
+| `harness/prefer-local-transformation` | warn | 不支持 | 建议先命名关键派生字段再投影 |
+
+`prefer-cn` 只在配置的组合函数已处于作用域中时修复简单数组；`cn-argument-layout` 只修复不含注释的长单行调用，涉及语义分组的诊断仍需手动处理。
 
 通过顶层 `rules` 传递规则选项：
 

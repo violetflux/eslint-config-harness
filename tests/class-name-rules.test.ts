@@ -22,6 +22,23 @@ function lint(rule: Rule.RuleModule, code: string, options: unknown[] = []) {
   return linter.verify(code, config, 'fixture.jsx')
 }
 
+/** 使用内存 Flat Config 执行规则并应用安全修复 */
+function fix(rule: Rule.RuleModule, code: string, options: unknown[] = []) {
+  const linter = new ESLintLinter()
+  const config: Linter.Config = {
+    files: ['**/*.jsx'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      parserOptions: { ecmaFeatures: { jsx: true } },
+      sourceType: 'module',
+    },
+    plugins: { harness: { rules: { target: rule } } },
+    rules: { 'harness/target': ['error', ...options] },
+  }
+
+  return linter.verifyAndFix(code, config, 'fixture.jsx')
+}
+
 /** -------------------- 测试 -------------------- */
 describe('className rules', () => {
   test('prefer-cn 只检查 className 中明确的 filter(Boolean).join 组合', () => {
@@ -52,6 +69,28 @@ describe('className rules', () => {
 
     expect(messages).toHaveLength(1)
     expect(messages[0]?.message).toContain('cx')
+  })
+
+  test('prefer-cn 仅在推荐函数已有绑定时自动替换简单数组组合', () => {
+    const fixed = fix(
+      preferCn,
+      `import { cn } from './utils'; <div className={['base', active && 'active'].filter(Boolean).join(' ')} />`,
+    )
+    const missingBinding = fix(
+      preferCn,
+      `<div className={['base', active && 'active'].filter(Boolean).join(' ')} />`,
+    )
+    const spread = fix(
+      preferCn,
+      `import { cn } from './utils'; <div className={['base', ...classes].filter(Boolean).join(' ')} />`,
+    )
+
+    expect(fixed.fixed).toBe(true)
+    expect(fixed.output).toContain(`className={cn('base', active && 'active')}`)
+    expect(missingBinding.fixed).toBe(false)
+    expect(missingBinding.messages.map(item => item.messageId)).toEqual(['preferCn'])
+    expect(spread.fixed).toBe(false)
+    expect(spread.messages.map(item => item.messageId)).toEqual(['preferCn'])
   })
 
   test('class-name-layout 只限制配置 class 字段中的长静态字符串', () => {
@@ -109,5 +148,21 @@ describe('className rules', () => {
 
     expect(messages).toEqual([])
     expect(custom.map(item => item.messageId)).toEqual(['shortStatic'])
+  })
+
+  test('cn-argument-layout 自动展开无注释的长单行调用', () => {
+    const fixed = fix(
+      cnArgumentLayout,
+      `const value = cn('flex items-center justify-between rounded-lg border px-4 py-2 gap-2', active && 'active')`,
+    )
+    const commented = fix(
+      cnArgumentLayout,
+      `const value = cn('flex items-center justify-between rounded-lg border px-4 py-2 gap-2', /* state */ active && 'active')`,
+    )
+
+    expect(fixed.fixed).toBe(true)
+    expect(fixed.output).toBe(`const value = cn(\n  'flex items-center justify-between rounded-lg border px-4 py-2 gap-2',\n  active && 'active',\n)`)
+    expect(commented.fixed).toBe(false)
+    expect(commented.messages.map(item => item.messageId)).toEqual(['longSingleLine'])
   })
 })

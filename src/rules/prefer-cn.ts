@@ -37,10 +37,10 @@ function readPropertyName(node: Rule.Node) {
     return String(node.type === 'Identifier' ? node.name : node.value)
 }
 
-/** 判断表达式是否为明确的数组 filter(Boolean).join(' ') 链 */
-function isFilterBooleanJoin(node: Rule.Node) {
+/** 读取明确的数组 filter(Boolean).join(' ') 链 */
+function readFilterBooleanJoinArray(node: Rule.Node) {
   if (node.type !== 'CallExpression' || node.arguments.length !== 1)
-    return false
+    return
 
   const { callee } = node
   const separator = node.arguments[0]
@@ -53,24 +53,28 @@ function isFilterBooleanJoin(node: Rule.Node) {
     || separator?.type !== 'Literal'
     || separator.value !== ' '
   ) {
-    return false
+    return
   }
 
   const filterCall = callee.object
 
   if (filterCall.type !== 'CallExpression' || filterCall.arguments.length !== 1)
-    return false
+    return
 
   const filter = filterCall.callee
   const predicate = filterCall.arguments[0]
 
-  return filter.type === 'MemberExpression'
+  if (
+    filter.type === 'MemberExpression'
     && !filter.computed
     && filter.property.type === 'Identifier'
     && filter.property.name === 'filter'
     && filter.object.type === 'ArrayExpression'
     && predicate?.type === 'Identifier'
     && predicate.name === 'Boolean'
+  ) {
+    return filter.object
+  }
 }
 
 /** -------------------- 规则 -------------------- */
@@ -78,6 +82,7 @@ function isFilterBooleanJoin(node: Rule.Node) {
 export const rule: Rule.RuleModule = {
   meta: {
     type: 'suggestion',
+    fixable: 'code',
     docs: {
       description: 'Prefer a class composition function over filter(Boolean).join in class fields',
     },
@@ -106,6 +111,53 @@ export const rule: Rule.RuleModule = {
     const options = (context.options[0] ?? {}) as Options
     const classNames = new Set(options.classNames ?? DEFAULT_CLASS_NAMES)
     const cnName = (options.cnNames ?? DEFAULT_CN_NAMES)[0] ?? 'cn'
+    const sourceCode = context.sourceCode
+
+    /** 判断推荐函数是否已由当前或上层作用域声明 */
+    const hasCnBinding = (node: Rule.Node) => {
+      let scope: ReturnType<typeof sourceCode.getScope> | null = sourceCode.getScope(node)
+
+      while (scope) {
+        if (scope.set.has(cnName))
+          return true
+        scope = scope.upper
+      }
+
+      return false
+    }
+
+    /** 为无注释和 spread 的明确数组组合创建安全替换 */
+    const createFix = (node: Rule.Node) => {
+      const array = readFilterBooleanJoinArray(node)
+
+      if (
+        !array
+        || !hasCnBinding(node)
+        || sourceCode.getCommentsInside(array).length > 0
+        || array.elements.some(element => !element || element.type === 'SpreadElement')
+      ) {
+        return
+      }
+
+      const argumentsText = array.elements
+        .map(element => sourceCode.getText(element!))
+        .join(', ')
+
+      return (fixer: Rule.RuleFixer) => fixer.replaceText(
+        node,
+        `${cnName}(${argumentsText})`,
+      )
+    }
+
+    /** 报告明确的数组 class 拼接并按可见绑定决定是否修复 */
+    const report = (node: Rule.Node) => {
+      context.report({
+        node,
+        messageId: 'preferCn',
+        data: { cnName },
+        fix: createFix(node),
+      })
+    }
 
     return {
       JSXAttribute: ((node: JsxAttributeNode) => {
@@ -116,16 +168,12 @@ export const rule: Rule.RuleModule = {
           || !classNames.has(name)
           || node.value?.type !== 'JSXExpressionContainer'
           || node.value.expression.type === 'JSXEmptyExpression'
-          || !isFilterBooleanJoin(node.value.expression)
+          || !readFilterBooleanJoinArray(node.value.expression)
         ) {
           return
         }
 
-        context.report({
-          node: node.value.expression,
-          messageId: 'preferCn',
-          data: { cnName },
-        })
+        report(node.value.expression)
       }) as never,
       Property(node) {
         if (node.kind !== 'init' || node.computed)
@@ -133,13 +181,8 @@ export const rule: Rule.RuleModule = {
 
         const name = readPropertyName(node.key as Rule.Node)
 
-        if (name && classNames.has(name) && isFilterBooleanJoin(node.value as Rule.Node)) {
-          context.report({
-            node,
-            messageId: 'preferCn',
-            data: { cnName },
-          })
-        }
+        if (name && classNames.has(name) && readFilterBooleanJoinArray(node.value as Rule.Node))
+          report(node.value as Rule.Node)
       },
     }
   },

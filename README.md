@@ -171,17 +171,19 @@ The Kerros integration enables:
 
 <br>
 
-| Rule | strict | Purpose |
-| --- | --- | --- |
-| `harness/short-jsx-return` | error | Keeps short JSX returns on one line |
-| `harness/named-import-export-layout` | error | Formats named imports and exports around 120 characters |
-| `harness/react-hook-order` | error | Orders standard React Hook stages; custom Hooks are opt-in |
-| `harness/prefer-cn` | warn | Replaces `filter(Boolean).join(' ')` class composition with `cn` |
-| `harness/class-name-layout` | warn | Prevents overly long static class strings |
-| `harness/cn-argument-layout` | warn | Normalizes static `cn` arguments and line layout |
-| `harness/prefer-property-shorthand` | warn | Encourages named transformations and property shorthand |
-| `harness/no-redundant-field-alias` | warn | Reduces redundant field aliases |
-| `harness/prefer-local-transformation` | warn | Encourages naming important derived fields before projection |
+| Rule | strict | Fix | Purpose |
+| --- | --- | --- | --- |
+| `harness/short-jsx-return` | error | yes | Keeps short JSX returns on one line |
+| `harness/named-import-export-layout` | error | yes | Formats named imports and exports around 120 characters |
+| `harness/react-hook-order` | error | no | Orders standard React Hook stages; custom Hooks are opt-in |
+| `harness/prefer-cn` | warn | partial | Replaces `filter(Boolean).join(' ')` class composition with `cn` |
+| `harness/class-name-layout` | warn | no | Prevents overly long static class strings |
+| `harness/cn-argument-layout` | warn | partial | Normalizes static `cn` arguments and line layout |
+| `harness/prefer-property-shorthand` | warn | no | Encourages named transformations and property shorthand |
+| `harness/no-redundant-field-alias` | warn | no | Reduces redundant field aliases |
+| `harness/prefer-local-transformation` | warn | no | Encourages naming important derived fields before projection |
+
+`prefer-cn` fixes simple arrays only when the configured composition function is already in scope. `cn-argument-layout` fixes uncommented long single-line calls; semantic regrouping remains diagnostic-only.
 
 Configure rule options through top-level `rules`:
 

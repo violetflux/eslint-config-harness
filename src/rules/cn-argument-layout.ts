@@ -40,6 +40,7 @@ function hasComplexClassGroup(value: string) {
 export const rule: Rule.RuleModule = {
   meta: {
     type: 'layout',
+    fixable: 'whitespace',
     docs: {
       description: 'Normalize static arguments and line layout in class composition calls',
     },
@@ -69,6 +70,40 @@ export const rule: Rule.RuleModule = {
     const maxLength = options.maxLength ?? DEFAULT_MAX_LENGTH
     const segmentDifference = options.segmentDifference ?? DEFAULT_SEGMENT_DIFFERENCE
     const sourceCode = context.sourceCode
+
+    /** 将无注释的单行调用展开为稳定的多行参数布局 */
+    const fixLongSingleLine = (node: Rule.Node & { arguments: Rule.Node[] }) => {
+      if (sourceCode.getCommentsInside(node).length > 0)
+        return
+
+      const firstArgument = node.arguments[0]
+      const lastArgument = node.arguments.at(-1)
+      const closingParenthesis = sourceCode.getLastToken(node)
+      const openingParenthesis = firstArgument
+        ? sourceCode.getTokenBefore(firstArgument)
+        : undefined
+
+      if (
+        !firstArgument
+        || !lastArgument
+        || openingParenthesis?.value !== '('
+        || closingParenthesis?.value !== ')'
+      ) {
+        return
+      }
+
+      const line = sourceCode.lines[node.loc!.start.line - 1] ?? ''
+      const indent = line.match(/^\s*/)?.[0] ?? ''
+      const argumentIndent = `${indent}  `
+      const argumentsText = node.arguments
+        .map(argument => sourceCode.getText(argument))
+        .join(`,\n${argumentIndent}`)
+
+      return (fixer: Rule.RuleFixer) => fixer.replaceTextRange(
+        [openingParenthesis.range![1], closingParenthesis.range![0]],
+        `\n${argumentIndent}${argumentsText},\n${indent}`,
+      )
+    }
 
     return {
       CallExpression(node) {
@@ -103,6 +138,7 @@ export const rule: Rule.RuleModule = {
             node,
             messageId: 'longSingleLine',
             data: { maxLength: String(maxLength) },
+            fix: fixLongSingleLine(node as Rule.Node & { arguments: Rule.Node[] }),
           })
           return
         }
