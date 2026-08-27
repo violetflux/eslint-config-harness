@@ -1,0 +1,7 @@
+minimumReleaseAgeExclude:
+  - '@violetflux/eslint-plugin-kerros@0.3.4'
+  - '@violetflux/kerros@0.3.3'
+shellEmulator: true
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - semver@6.3.1

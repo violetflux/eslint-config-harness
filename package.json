@@ -1,0 +1,71 @@
+{
+  "name": "@violetflux/eslint-config-harness",
+  "version": "0.1.0",
+  "description": "Configurable ESLint flat config with Violetflux rules and integrations",
+  "homepage": "https://github.com/violetflux/eslint-config-harness#readme",
+  "bugs": {
+    "url": "https://github.com/violetflux/eslint-config-harness/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/violetflux/eslint-config-harness.git"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "README.zh-CN.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=24.18.1 <25",
+    "pnpm": ">=11 <12"
+  },
+  "packageManager": "pnpm@11.18.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "lint": "eslint .",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "eslint": "^9.10.0 || ^10.0.0",
+    "tailwindcss": "^3.3.0 || ^4.1.17",
+    "typescript": ">=5.0.0 <6.1.0"
+  },
+  "peerDependenciesMeta": {
+    "tailwindcss": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@antfu/eslint-config": "^9.2.0",
+    "@typescript-eslint/parser": "^8.65.0",
+    "@violetflux/eslint-plugin-kerros": "^0.3.4",
+    "eslint-plugin-better-tailwindcss": "^4.7.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "ignore": "^7.0.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "eslint": "^10.8.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}
