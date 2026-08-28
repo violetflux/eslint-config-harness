@@ -7,7 +7,7 @@
 - Harness 自己实现的 9 条 `harness/*` 规则
 - `@antfu/eslint-config` 提供的 9 条 `antfu/*` 规则
 - Harness 在 Antfu 基础上新增、关闭或调整的规则
-- 规则级别、配置参数、诊断信息、错误示例和推荐写法
+- 规则级别、配置参数、诊断信息、触发示例和符合示例
 
 React、Vue、Tailwind CSS、Kerros 等集成是否生效，仍由项目检测结果或 `harness()` 参数决定。
 
@@ -90,7 +90,7 @@ eslint . --fix
 | --- | --- | --- | --- |
 | `maxLength` | 正整数 | `120` | `return JSX` 折叠为一行后的最大长度 |
 
-不推荐：
+会触发规则：
 
 ```jsx
 function Message() {
@@ -100,7 +100,7 @@ function Message() {
 }
 ```
 
-推荐：
+符合规则：
 
 ```jsx
 function Message() {
@@ -125,7 +125,7 @@ function Message() {
 | --- | --- | --- | --- |
 | `maxLength` | 正整数 | `120` | 声明折叠为单行后的最大长度 |
 
-不推荐：
+会触发规则：
 
 ```ts
 import type {
@@ -134,13 +134,13 @@ import type {
 } from './types'
 ```
 
-推荐：
+符合规则：
 
 ```ts
 import type { Alpha, Beta as Gamma } from './types'
 ```
 
-过长时推荐：
+过长时的符合写法：
 
 ```ts
 import DefaultValue, {
@@ -207,7 +207,7 @@ export default harness({
 })
 ```
 
-不推荐：
+会触发规则：
 
 ```tsx
 function Profile() {
@@ -217,7 +217,7 @@ function Profile() {
 }
 ```
 
-推荐：
+符合规则：
 
 ```tsx
 function Profile() {
@@ -242,13 +242,13 @@ class 字段中的 `filter(Boolean).join(' ')` 应改用项目的 class 合并�
 | `classNames` | `string[]` | `['className']` | 要检查的 JSX 属性或对象字段 |
 | `cnNames` | 非空 `string[]` | `['cn']` | 推荐函数名称；第一项用于诊断和修复 |
 
-不推荐：
+会触发规则：
 
 ```tsx
 <div className={['base', active && 'active'].filter(Boolean).join(' ')} />
 ```
 
-推荐：
+符合规则：
 
 ```tsx
 <div className={cn('base', active && 'active')} />
@@ -269,13 +269,13 @@ class 字段中的 `filter(Boolean).join(' ')` 应改用项目的 class 合并�
 | `classNames` | `string[]` | `['className']` | 要检查的 JSX 属性或对象字段 |
 | `maxLength` | 正整数 | `56` | 静态 class 字符串最大长度 |
 
-不推荐：
+会触发规则：
 
 ```tsx
 <div className="flex items-center justify-between gap-2 rounded-lg border px-4 py-2" />
 ```
 
-推荐：
+符合规则：
 
 ```tsx
 <div
@@ -305,25 +305,25 @@ class 字段中的 `filter(Boolean).join(' ')` 应改用项目的 class 合并�
 | `maxLength` | 正整数 | `56` | 静态 class 总长度阈值 |
 | `segmentDifference` | 非负整数 | `32` | 最长与最短静态分组允许的最大字符差 |
 
-不推荐的短静态调用：
+会触发规则的短静态调用：
 
 ```ts
 const className = cn('flex', 'items-center')
 ```
 
-推荐：
+符合规则：
 
 ```ts
 const className = 'flex items-center'
 ```
 
-不推荐的长单行调用：
+会触发规则的长单行调用：
 
 ```ts
 const className = cn('flex items-center justify-between rounded-lg border px-4 py-2 gap-2', active && 'active')
 ```
 
-推荐：
+符合规则：
 
 ```ts
 const className = cn(
@@ -347,7 +347,7 @@ const className = cn(
 | `ignoredFunctions` | `string[]` | `[]` | 不检查的转换函数名称 |
 | `requireDestructuredSource` | boolean | `true` | 是否只检查当前作用域内由对象解构得到的同名来源 |
 
-不推荐：
+会触发规则：
 
 ```ts
 function create(input) {
@@ -356,7 +356,7 @@ function create(input) {
 }
 ```
 
-推荐：
+符合规则：
 
 ```ts
 function create(input) {
@@ -384,19 +384,19 @@ function create(input) {
 | `ignoredFunctionSuffixes` | `string[]` | `[]` | 跳过名称以指定后缀结尾的函数 |
 | `temporaryAliasSuffixes` | `string[]` | `[]` | 视为临时别名的业务后缀 |
 
-不推荐：
+会触发规则：
 
 ```ts
 const { removeThread: removeThreadInStream } = stream
 ```
 
-配置 `temporaryAliasSuffixes: ['InStream']` 后，推荐：
+配置 `temporaryAliasSuffixes: ['InStream']` 后的符合写法：
 
 ```ts
 const { removeThread: _removeThread } = stream
 ```
 
-返回字段不推荐：
+会触发规则的返回字段写法：
 
 ```ts
 function create(input) {
@@ -406,7 +406,7 @@ function create(input) {
 }
 ```
 
-推荐：
+符合规则：
 
 ```ts
 function create(input) {
@@ -435,7 +435,7 @@ function create(input) {
 
 派生表达式包括调用、`await`、二元表达式、逻辑表达式和条件表达式。
 
-不推荐：
+会触发规则：
 
 ```ts
 invoke({
@@ -445,7 +445,7 @@ invoke({
 })
 ```
 
-推荐：
+符合规则：
 
 ```ts
 const payload = normalize(rawPayload)
@@ -463,7 +463,7 @@ invoke({
 
 这些规则来自 `@antfu/eslint-config`，普通源码中默认均为 `error`。
 
-| 规则 | 错误写法 | 推荐写法 |
+| 规则 | 触发示例 | 符合示例 |
 | --- | --- | --- |
 | `antfu/no-top-level-await` | 模块顶层直接 `await load()` | 放入 `async function main()`，或按项目需要覆盖规则 |
 | `antfu/import-dedupe` | 从同一模块写多条 import | 合并为一条 import |
@@ -483,7 +483,7 @@ Antfu 还组合了 ESLint 核心、TypeScript、import、node、style、regexp�
 
 ### 两个预设都会新增
 
-| 规则 | 级别 | 推荐写法 |
+| 规则 | 级别 | 符合写法 |
 | --- | --- | --- |
 | `no-return-await` | error | 没有特殊错误处理时直接 `return promise` |
 | `no-void` | error | 正常调用异步函数并显式处理返回值或错误 |
