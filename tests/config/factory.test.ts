@@ -36,6 +36,7 @@ describe('harness config factory', () => {
     expect(hasKerrosPlugin).toBe(false)
     expect(configs.some(config => config.name === 'harness/react')).toBe(false)
     expect(configs.some(config => config.name === 'harness/tailwind')).toBe(false)
+    expect(configs.some(config => config.name === 'antfu/vue/rules')).toBe(false)
   })
 
   test('允许完全关闭 TypeScript 集成', async () => {
@@ -44,10 +45,47 @@ describe('harness config factory', () => {
       react: false,
       tailwind: false,
       typescript: false,
+      vue: false,
     })
 
     expect(configs.some(config => config.name?.includes('typescript'))).toBe(false)
     expect(configs.some(config => config.name === 'harness/test-file-size')).toBe(true)
+  })
+
+  test('按 Antfu 原生 vueVersion 选择 Vue 2 或 Vue 3 规则', async () => {
+    const common = {
+      kerros: false,
+      react: false,
+      tailwind: false,
+      typescript: false,
+    } as const
+    const vue2Configs = await resolveConfig({
+      ...common,
+      vue: { vueVersion: 2 },
+    })
+    const vue3Configs = await resolveConfig({
+      ...common,
+      vue: { vueVersion: 3 },
+    })
+    const defaultVueConfigs = await resolveConfig({
+      ...common,
+      vue: {},
+    })
+    const vue2 = vue2Configs.find(config => config.name === 'antfu/vue/rules')
+    const vue3 = vue3Configs.find(config => config.name === 'antfu/vue/rules')
+    const defaultVue = defaultVueConfigs.find(config => config.name === 'antfu/vue/rules')
+
+    expect(vue2?.rules?.['vue/no-v-for-template-key']).toBe('error')
+    expect(vue2?.rules?.['vue/no-deprecated-v-bind-sync']).toBeUndefined()
+    expect(vue3?.rules?.['vue/no-v-for-template-key-on-child']).toBe('error')
+    expect(vue3?.rules?.['vue/no-deprecated-v-bind-sync']).toBe('error')
+    expect(defaultVue?.rules?.['vue/no-deprecated-v-bind-sync']).toBe('error')
+  })
+
+  test('允许显式关闭 Vue 集成', async () => {
+    const configs = await resolveConfig({ vue: false })
+
+    expect(configs.some(config => config.name === 'antfu/vue/rules')).toBe(false)
   })
 
   test('react 关闭时不启用 React 与 JSX 策略', async () => {

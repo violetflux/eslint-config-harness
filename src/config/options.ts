@@ -1,3 +1,4 @@
+import type { OptionsVue } from '@antfu/eslint-config'
 import type { Linter } from 'eslint'
 import type { Selector } from 'eslint-plugin-better-tailwindcss/types'
 
@@ -10,6 +11,9 @@ export interface HarnessReactOptions {
   /** 应用 React 规则的源码范围 */
   files?: string[]
 }
+
+/** Vue 配置，沿用 Antfu 原生选项 */
+export type HarnessVueOptions = OptionsVue
 
 /** Tailwind class 表达式选择器 */
 export type HarnessTailwindSelector = Selector
@@ -50,4 +54,6 @@ export interface HarnessOptions {
   tailwind?: boolean | HarnessTailwindOptions
   /** 是否启用不含类型图的 TypeScript 规则 */
   typescript?: boolean
+  /** 是否启用 Vue 规则及其配置，省略时自动检测 */
+  vue?: boolean | HarnessVueOptions
 }

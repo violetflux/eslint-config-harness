@@ -1,6 +1,6 @@
 {
   "name": "@violetflux/eslint-config-harness",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Configurable ESLint flat config with Violetflux rules and integrations",
   "homepage": "https://github.com/violetflux/eslint-config-harness#readme",
   "bugs": {
@@ -15,6 +15,7 @@
   "files": [
     "dist",
     "LICENSE",
+    "RULES.md",
     "README.md",
     "README.zh-CN.md"
   ],

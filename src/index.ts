@@ -7,6 +7,7 @@ export type {
   HarnessReactOptions,
   HarnessTailwindSelector,
   HarnessTailwindOptions,
+  HarnessVueOptions,
 } from './config/options.js'
 export { plugin, pluginNamespace } from './plugin/index.js'
 export { rules } from './rules/index.js'

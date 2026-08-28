@@ -2,10 +2,10 @@
 
 English | [简体中文](./README.zh-CN.md)
 
-An opinionated ESLint Flat Config based on [`@antfu/eslint-config`](https://github.com/antfu/eslint-config), with presets and integrations for TypeScript, React, Tailwind CSS, Kerros, and additional code-quality rules.
+An opinionated ESLint Flat Config based on [`@antfu/eslint-config`](https://github.com/antfu/eslint-config), with presets and integrations for TypeScript, React, Vue, Tailwind CSS, Kerros, and additional code-quality rules.
 
 - One-line setup with practical defaults
-- TypeScript, React, JSON, YAML, and Markdown support
+- TypeScript, React, Vue 2, Vue 3, JSON, YAML, and Markdown support
 - Optional Tailwind CSS and Kerros integrations
 - `recommended` and `strict` presets
 - Rule overrides and Flat Config composition
@@ -53,6 +53,7 @@ export default harness({
 | `preset` | `'strict'` | Use `'recommended'` for a lower-noise rollout |
 | `typescript` | `true` | Enable TypeScript support |
 | `react` | auto | Enable React Hooks rules |
+| `vue` | auto | Enable Vue rules with native Antfu options; set `vueVersion` for Vue 2 or Vue 3 |
 | `tailwind` | auto | Enable Tailwind conflict, canonicalization, and concatenation checks |
 | `kerros` | auto | Enable Kerros rules |
 | `ignores` | `[]` | Add patterns on top of `.gitignore` and Antfu defaults |
@@ -75,6 +76,9 @@ export default harness({
   react: {
     files: ['src/**/*.{ts,tsx}'],
   },
+  vue: {
+    vueVersion: 2,
+  },
   tailwind: {
     entryPoint: 'src/styles/index.css',
     files: ['src/**/*.tsx'],
@@ -95,6 +99,85 @@ export default harness({
 ```
 
 </details>
+
+## Enabled rules
+
+The default `strict` preset combines the Antfu baseline, Harness policies, and any auto-detected integrations. The summary below separates the always-resolved baseline from conditional integrations so it is clear why a rule is active.
+
+> [Detailed rule reference: options, warnings, errors, and examples (简体中文)](./RULES.md)
+
+### Harness built-in rules
+
+The built-in plugin is registered in both presets, but its rules are enabled by `strict`. React-specific rules are disabled when the React integration is off.
+
+| Rule | recommended | strict | Applies to | Fix | Purpose |
+| --- | --- | --- | --- | --- | --- |
+| `harness/short-jsx-return` | off | error with React | JSX/TSX | yes | Keeps short JSX returns on one line |
+| `harness/named-import-export-layout` | off | error | JS/JSX/TS/TSX | yes | Formats named imports and exports around 120 characters |
+| `harness/react-hook-order` | off | error with React | JS/JSX/TS/TSX | no | Orders standard React Hook stages; custom Hooks are opt-in |
+| `harness/prefer-cn` | off | warn | JS/JSX/TS/TSX | partial | Replaces `filter(Boolean).join(' ')` class composition with `cn` |
+| `harness/class-name-layout` | off | warn | JS/JSX/TS/TSX | no | Prevents overly long static class strings |
+| `harness/cn-argument-layout` | off | warn | JS/JSX/TS/TSX | partial | Normalizes static `cn` arguments and line layout |
+| `harness/prefer-property-shorthand` | off | warn | JS/JSX/TS/TSX | no | Encourages named transformations and property shorthand |
+| `harness/no-redundant-field-alias` | off | warn | JS/JSX/TS/TSX | no | Reduces redundant field aliases |
+| `harness/prefer-local-transformation` | off | warn | JS/JSX/TS/TSX | no | Encourages naming important derived fields before projection |
+
+`prefer-cn` fixes simple arrays only when the configured composition function is already in scope. `cn-argument-layout` fixes uncommented long single-line calls; semantic regrouping remains diagnostic-only.
+
+### Antfu rules
+
+These 9 rules come from the `antfu/*` namespace in `@antfu/eslint-config`. They are all `error` by default:
+
+| Rule | Purpose |
+| --- | --- |
+| `antfu/no-top-level-await` | Disallows top-level `await` |
+| `antfu/import-dedupe` | Merges duplicate imports from the same module |
+| `antfu/no-import-dist` | Prevents direct imports from another package's build output |
+| `antfu/no-import-node-modules-by-path` | Prevents path-based access to `node_modules` |
+| `antfu/consistent-list-newline` | Normalizes newlines in list-like structures |
+| `antfu/consistent-chaining` | Normalizes chained-call layout |
+| `antfu/curly` | Normalizes braces around control statements |
+| `antfu/if-newline` | Normalizes `if` statement newlines |
+| `antfu/top-level-function` | Prefers function declarations at the top level; Harness `strict` disables it in React JSX files |
+
+Antfu also enables its standard ESLint core, TypeScript, import, node, style, regexp, unicorn, JSON, YAML, and Markdown presets. Harness keeps those defaults except for the explicit changes below.
+
+### What Harness changes in Antfu
+
+Harness enables these rules in both presets:
+
+| Rule | Level | Purpose |
+| --- | --- | --- |
+| `no-return-await` | error | Disallows redundant `return await` |
+| `no-void` | error | Disallows `void` expressions |
+| `require-await` | error | Requires async functions to contain `await` |
+
+`strict` disables these Antfu defaults:
+
+| Rule | Condition or reason |
+| --- | --- |
+| `eslint-comments/no-unlimited-disable` | Allows ESLint disable comments without rule names |
+| `jsdoc/no-defaults` | Allows defaults in JSDoc |
+| `no-console` | Allows console calls |
+| `node/prefer-global/process` | Does not restrict how `process` is referenced |
+| `prefer-promise-reject-errors` | Allows rejecting non-Error values |
+| `style/eol-last` | Does not require a final newline |
+| `test/prefer-lowercase-title` | Does not require lowercase test titles |
+| `antfu/top-level-function` | Disabled only in React JSX files |
+
+`strict` also changes or adds these policies:
+
+| Rule | Final behavior |
+| --- | --- |
+| `unused-imports/no-unused-vars` | error; ignores variables, arguments, and caught errors prefixed with `_` |
+| `test/consistent-test-it` | error; consistently uses `test` |
+| `ts/ban-ts-comment` | error; only described `@ts-ignore` comments are allowed |
+| `ts/consistent-type-imports` | error; types use `import type` |
+| `no-restricted-syntax` | error; disallows star exports and requires private members to start with `_`; React JSX also restricts function expressions and arrow-function components |
+| `jsdoc/require-jsdoc` | error; TypeScript interfaces and their members require documentation |
+| `max-lines` | error; test files are limited to 2000 lines |
+
+See “Integration details” below for conditional React, Vue, Tailwind CSS, and Kerros rules.
 
 ## Extending with another plugin
 
@@ -130,7 +213,7 @@ export default harness().append(
 
 ### Automatic detection
 
-Harness can detect React, Tailwind CSS, and Kerros automatically. Set an integration to `true`, `false`, or an options object whenever explicit behavior is preferred.
+Harness can detect React, Vue, Tailwind CSS, and Kerros automatically. Set an integration to `true`, `false`, or an options object whenever explicit behavior is preferred.
 
 ### TypeScript
 
@@ -141,6 +224,22 @@ export default harness({ typescript: true })
 ```
 
 Set `typescript: false` to disable TypeScript support.
+
+### React
+
+The React integration enables the recommended `react-hooks/*` rules. Under `strict`, it also enables `harness/react-hook-order` and `harness/short-jsx-return`, and applies the JSX declaration restrictions listed above.
+
+### Vue
+
+Vue 3 rules are enabled automatically when Vue, Nuxt, VitePress, or Slidev is detected. Vue 2 projects should select their version explicitly:
+
+```js
+export default harness({
+  vue: { vueVersion: 2 },
+})
+```
+
+Set `vue: true` to explicitly enable the default Vue 3 rules, or `vue: false` to disable Vue support.
 
 ### Tailwind CSS
 
@@ -163,59 +262,6 @@ The Kerros integration enables:
 - `kerros/no-broad-store-access`
 - `kerros/no-whole-store-selector`
 - `kerros/selector-parameter-name`
-
-</details>
-
-<details>
-<summary>Built-in rules</summary>
-
-<br>
-
-| Rule | strict | Fix | Purpose |
-| --- | --- | --- | --- |
-| `harness/short-jsx-return` | error | yes | Keeps short JSX returns on one line |
-| `harness/named-import-export-layout` | error | yes | Formats named imports and exports around 120 characters |
-| `harness/react-hook-order` | error | no | Orders standard React Hook stages; custom Hooks are opt-in |
-| `harness/prefer-cn` | warn | partial | Replaces `filter(Boolean).join(' ')` class composition with `cn` |
-| `harness/class-name-layout` | warn | no | Prevents overly long static class strings |
-| `harness/cn-argument-layout` | warn | partial | Normalizes static `cn` arguments and line layout |
-| `harness/prefer-property-shorthand` | warn | no | Encourages named transformations and property shorthand |
-| `harness/no-redundant-field-alias` | warn | no | Reduces redundant field aliases |
-| `harness/prefer-local-transformation` | warn | no | Encourages naming important derived fields before projection |
-
-`prefer-cn` fixes simple arrays only when the configured composition function is already in scope. `cn-argument-layout` fixes uncommented long single-line calls; semantic regrouping remains diagnostic-only.
-
-Configure rule options through top-level `rules`:
-
-```js
-export default harness({
-  rules: {
-    'harness/named-import-export-layout': ['error', { maxLength: 100 }],
-    'harness/class-name-layout': ['warn', { maxLength: 64 }],
-    'harness/cn-argument-layout': ['warn', {
-      cnNames: ['cn', 'cx'],
-      maxLength: 64,
-      segmentDifference: 32,
-    }],
-  },
-})
-```
-
-Available built-in rule options:
-
-| Rule | Options |
-| --- | --- |
-| `short-jsx-return` | `maxLength` |
-| `named-import-export-layout` | `maxLength` |
-| `react-hook-order` | `barrier`, `groups`, `order` |
-| `prefer-cn` | `classNames`, `cnNames` |
-| `class-name-layout` | `classNames`, `maxLength` |
-| `cn-argument-layout` | `cnNames`, `maxLength`, `segmentDifference` |
-| `prefer-property-shorthand` | `ignoredFunctions`, `requireDestructuredSource` |
-| `no-redundant-field-alias` | `checkReturnAliases`, `ignoredFunctionSuffixes`, `temporaryAliasSuffixes` |
-| `prefer-local-transformation` | `contexts`, `maxProperties`, `maxTransformations`, `minShorthandProperties` |
-
-`react-hook-order.groups` maps stage names to Hook names or `{ pattern, flags }` matchers. `order` selects the stage order, while `barrier` controls whether Hooks may appear after ordinary statements.
 
 </details>
 

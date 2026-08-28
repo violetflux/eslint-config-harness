@@ -38,11 +38,13 @@ export function harness(options: HarnessOptions = {}): ReturnType<typeof antfu> 
     rules,
     tailwind = detected.tailwind,
     typescript = true,
+    vue,
   } = options
   const antfuOptions: OptionsConfig = {
     ignores,
     react: false,
     typescript,
+    ...(vue === undefined ? {} : { vue }),
   }
   const additions: Array<TypedFlatConfigItem | Promise<TypedFlatConfigItem>> = [
     recommendedConfig,
