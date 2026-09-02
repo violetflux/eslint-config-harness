@@ -132,7 +132,7 @@ Both presets add these rules on top of Antfu:
 | `unused-imports/no-unused-vars` | error; variables, parameters, and catch parameters prefixed with `_` may be unused |
 | `test/consistent-test-it` | error; consistently use `test` |
 | `ts/ban-ts-comment` | error; `@ts-ignore` requires a description |
-| `ts/consistent-type-imports` | error; use `import type` for types |
+| `ts/consistent-type-imports` | error; use `import type` for types; infer legacy decorator metadata options from TSConfig |
 | `no-restricted-syntax` | error; disallow star exports, require `_` for private members, and add React JSX restrictions |
 | `jsdoc/require-jsdoc` | error; TypeScript interfaces and their members require documentation |
 | `max-lines` | error; test files may contain at most 2,000 lines |
@@ -157,6 +157,11 @@ TypeScript is enabled by default, using rules that do not require a full type gr
 ```js
 export default harness({ typescript: true })
 ```
+
+Harness automatically reads each directory's `tsconfig.json`. When both
+`experimentalDecorators` and `emitDecoratorMetadata` are enabled, their values are
+passed to `ts/consistent-type-imports`, allowing the rule to protect runtime imports
+used by decorator metadata without a manual NestJS directory override.
 
 Disable it in a JavaScript-only project:
 

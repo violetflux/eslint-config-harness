@@ -5,6 +5,7 @@ import { afterEach, expect, test } from 'vitest'
 import {
   detectIntegrations,
   detectTailwindEntryPoint,
+  detectTypeScriptParserScopes,
   readCssDependencyFiles,
 } from '../../src/config/detection.js'
 
@@ -122,6 +123,44 @@ test('可显式跳过 Tailwind 样式入口检测', () => {
   writeFileSync(path.join(cwd, 'index.css'), '@import "tailwindcss";\n')
 
   expect(detectIntegrations(cwd, { tailwind: false }).tailwind).toBe(false)
+})
+
+test('从继承后的 TSConfig 选项推导装饰器解析范围', () => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'harness-detection-'))
+  const serverDir = path.join(cwd, 'projects/server')
+
+  temporaryDirs.push(cwd)
+  mkdirSync(serverDir, { recursive: true })
+  writeFileSync(path.join(cwd, 'tsconfig.base.json'), JSON.stringify({
+    compilerOptions: {
+      emitDecoratorMetadata: true,
+      experimentalDecorators: true,
+    },
+  }))
+  writeFileSync(path.join(cwd, 'tsconfig.json'), JSON.stringify({
+    compilerOptions: {
+      emitDecoratorMetadata: false,
+      experimentalDecorators: false,
+    },
+    files: [],
+  }))
+  writeFileSync(path.join(serverDir, 'tsconfig.json'), JSON.stringify({
+    extends: '../../tsconfig.base.json',
+    files: [],
+  }))
+
+  expect(detectTypeScriptParserScopes(cwd)).toEqual([
+    {
+      emitDecoratorMetadata: false,
+      experimentalDecorators: false,
+      files: ['**/*.{ts,tsx,mts,cts}'],
+    },
+    {
+      emitDecoratorMetadata: true,
+      experimentalDecorators: true,
+      files: ['projects/server/**/*.{ts,tsx,mts,cts}'],
+    },
+  ])
 })
 
 test('只读取入口 CSS 可达的本地依赖', () => {

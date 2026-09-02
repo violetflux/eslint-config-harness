@@ -1,7 +1,10 @@
 import type { OptionsConfig, TypedFlatConfigItem } from '@antfu/eslint-config'
 import antfu from '@antfu/eslint-config'
 import type { HarnessOptions } from './options.js'
-import { detectIntegrations } from './detection.js'
+import {
+  detectIntegrations,
+  detectTypeScriptParserScopes,
+} from './detection.js'
 import {
   createKerrosConfig,
   createReactConfig,
@@ -24,6 +27,7 @@ const recommendedConfig = {
 /** -------------------- 核心函数 -------------------- */
 /** 创建 Antfu 风格的 Harness Flat Config */
 export function harness(options: HarnessOptions = {}): ReturnType<typeof antfu> {
+  const typescript = options.typescript ?? true
   const needsDetection = options.kerros === undefined
     || options.react === undefined
     || options.tailwind === undefined
@@ -37,7 +41,6 @@ export function harness(options: HarnessOptions = {}): ReturnType<typeof antfu> 
     react = detected.react,
     rules,
     tailwind = detected.tailwind,
-    typescript = true,
     vue,
   } = options
   const antfuOptions: OptionsConfig = {
@@ -67,6 +70,21 @@ export function harness(options: HarnessOptions = {}): ReturnType<typeof antfu> 
   if (kerros)
     additions.push(createKerrosConfig(kerros))
   const composer = antfu(antfuOptions).append(...additions)
+
+  if (typescript) {
+    for (const [index, scope] of detectTypeScriptParserScopes().entries()) {
+      composer.append({
+        name: `harness/typescript-parser-options/${index}`,
+        files: scope.files,
+        languageOptions: {
+          parserOptions: {
+            emitDecoratorMetadata: scope.emitDecoratorMetadata,
+            experimentalDecorators: scope.experimentalDecorators,
+          },
+        },
+      })
+    }
+  }
 
   if (preset === 'strict') {
     composer.append(...createStrictPolicyConfigs({

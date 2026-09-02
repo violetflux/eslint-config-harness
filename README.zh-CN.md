@@ -132,7 +132,7 @@ Antfu 不只是下面 9 条规则。它还组合了 ESLint 核心、TypeScript�
 | `unused-imports/no-unused-vars` | error；以 `_` 开头的变量、参数和 catch 参数可以不使用 |
 | `test/consistent-test-it` | error；统一使用 `test` |
 | `ts/ban-ts-comment` | error；`@ts-ignore` 必须带说明 |
-| `ts/consistent-type-imports` | error；类型使用 `import type` |
+| `ts/consistent-type-imports` | error；类型使用 `import type`；自动识别 TSConfig 的旧版装饰器元数据选项 |
 | `no-restricted-syntax` | error；禁止星号导出，私有成员以 `_` 开头；React JSX 另有限制 |
 | `jsdoc/require-jsdoc` | error；TypeScript interface 及其成员必须有注释 |
 | `max-lines` | error；测试文件最多 2000 行 |
@@ -157,6 +157,11 @@ TypeScript 默认启用，规则不依赖完整类型图：
 ```js
 export default harness({ typescript: true })
 ```
+
+Harness 会自动读取各目录的 `tsconfig.json`。当同时启用
+`experimentalDecorators` 和 `emitDecoratorMetadata` 时，解析器会把选项传给
+`ts/consistent-type-imports`，由规则自动保护装饰器元数据依赖的运行时导入；无需按
+NestJS 目录手动关闭规则。
 
 纯 JavaScript 项目可以关闭：
 

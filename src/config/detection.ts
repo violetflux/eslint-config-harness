@@ -3,6 +3,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { GLOB_EXCLUDE } from '@antfu/eslint-config'
 import createIgnore from 'ignore'
+import ts from 'typescript'
 
 /** -------------------- 类型 -------------------- */
 /** 自动检测到的可选集成 */
@@ -13,6 +14,16 @@ export interface DetectedIntegrations {
   react: boolean
   /** 项目是否包含 Tailwind 依赖与样式入口 */
   tailwind: boolean
+}
+
+/** 单个 TSConfig 对应的装饰器解析选项范围 */
+export interface TypeScriptParserScope {
+  /** 是否按旧版装饰器语义解析 */
+  experimentalDecorators: boolean
+  /** 是否按装饰器元数据语义解析 */
+  emitDecoratorMetadata: boolean
+  /** 应用该 TSConfig 解析选项的 TypeScript 文件范围 */
+  files: string[]
 }
 
 /** package.json 中可能声明直接依赖的字段 */
@@ -46,6 +57,39 @@ export function detectIntegrations(
     react: dependencies.has('react'),
     tailwind,
   }
+}
+
+/** 从各目录的 tsconfig.json 推导装饰器解析选项 */
+export function detectTypeScriptParserScopes(
+  cwd = process.cwd(),
+): TypeScriptParserScope[] {
+  return discoverProjectFiles(cwd, '**/tsconfig.json')
+    .map((file) => {
+      const configPath = path.join(cwd, file)
+      const parsed = ts.getParsedCommandLineOfConfigFile(configPath, {}, {
+        ...ts.sys,
+        onUnRecoverableConfigFileDiagnostic: () => {},
+      })
+
+      if (!parsed)
+        return undefined
+
+      const directory = normalizePath(path.dirname(file))
+
+      return {
+        emitDecoratorMetadata: parsed.options.emitDecoratorMetadata === true,
+        experimentalDecorators: parsed.options.experimentalDecorators === true,
+        files: [directory === '.'
+          ? '**/*.{ts,tsx,mts,cts}'
+          : `${directory}/**/*.{ts,tsx,mts,cts}`],
+      } satisfies TypeScriptParserScope
+    })
+    .filter(scope => scope !== undefined)
+    .sort((left, right) => {
+      const depth = left.files[0]!.split('/').length - right.files[0]!.split('/').length
+
+      return depth || left.files[0]!.localeCompare(right.files[0]!)
+    })
 }
 
 /** 从 CSS import 图中推导唯一 Tailwind 根入口 */

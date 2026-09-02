@@ -2,7 +2,11 @@ import type { TypedFlatConfigItem } from '@antfu/eslint-config'
 import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/api/defaults'
 import { MatcherType, SelectorKind } from 'eslint-plugin-better-tailwindcss/types'
 import { ESLint } from 'eslint'
-import { describe, expect, test } from 'vitest'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import process from 'node:process'
+import { describe, expect, test, vi } from 'vitest'
 import type { HarnessTailwindSelector } from '../../src/index.js'
 import { harness } from '../../src/index.js'
 
@@ -136,6 +140,54 @@ describe('harness config factory', () => {
 
     expect(mts.map(message => message.ruleId)).toContain('no-restricted-syntax')
     expect(cts.map(message => message.ruleId)).toContain('no-restricted-syntax')
+  })
+
+  test('自动读取 TSConfig 并保护装饰器元数据使用的运行时导入', async () => {
+    const cwd = mkdtempSync(path.join(tmpdir(), 'harness-factory-'))
+    const serverDir = path.join(cwd, 'projects/server')
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(cwd)
+
+    mkdirSync(serverDir, { recursive: true })
+    writeFileSync(path.join(serverDir, 'tsconfig.json'), JSON.stringify({
+      compilerOptions: {
+        emitDecoratorMetadata: true,
+        experimentalDecorators: true,
+      },
+      files: [],
+    }))
+
+    try {
+      const configs = await resolveConfig({
+        kerros: false,
+        react: false,
+        tailwind: false,
+      })
+      const parserConfig = configs.find(config => config.name === 'harness/typescript-parser-options/0')
+      const eslint = new ESLint({
+        overrideConfig: configs,
+        overrideConfigFile: true,
+      })
+      const [result] = await eslint.lintText(
+        `import { Dependency } from './dependency'\nfunction Injectable(): ClassDecorator { return () => {} }\n@Injectable()\nclass Service { constructor(readonly dependency: Dependency) {} }\n`,
+        { filePath: path.join(serverDir, 'service.ts') },
+      )
+      const [plainResult] = await eslint.lintText(
+        `import { Dependency } from './dependency'\ntype Value = Dependency\nexport type { Value }\n`,
+        { filePath: path.join(serverDir, 'plain.ts') },
+      )
+
+      expect(parserConfig?.files).toEqual(['projects/server/**/*.{ts,tsx,mts,cts}'])
+      expect(parserConfig?.languageOptions?.parserOptions).toMatchObject({
+        emitDecoratorMetadata: true,
+        experimentalDecorators: true,
+      })
+      expect(result?.messages.map(message => message.ruleId)).not.toContain('ts/consistent-type-imports')
+      expect(plainResult?.messages.map(message => message.ruleId)).toContain('ts/consistent-type-imports')
+    }
+    finally {
+      cwdSpy.mockRestore()
+      rmSync(cwd, { force: true, recursive: true })
+    }
   })
 
   test('在 Antfu 默认忽略基础上追加用户路径', async () => {

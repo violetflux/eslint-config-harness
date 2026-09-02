@@ -511,7 +511,7 @@ Antfu 还组合了 ESLint 核心、TypeScript、import、node、style、regexp�
 | `unused-imports/no-unused-vars` | error | 以 `_` 开头的变量、参数和 catch 参数允许未使用 |
 | `test/consistent-test-it` | error | 测试声明统一使用 `test` |
 | `ts/ban-ts-comment` | error | `@ts-check`、`@ts-expect-error`、`@ts-nocheck` 被禁止；`@ts-ignore` 必须带说明 |
-| `ts/consistent-type-imports` | error | 类型使用 `import type` |
+| `ts/consistent-type-imports` | error | 类型使用 `import type`；自动读取各目录 TSConfig 的旧版装饰器元数据选项，保护元数据依赖的运行时导入 |
 | `no-restricted-syntax` | error | 禁止 const enum、`export =`、星号导出；私有成员以 `_` 开头；React JSX 另限制函数表达式和箭头函数组件 |
 | `jsdoc/require-jsdoc` | error | TypeScript interface 及其属性、方法、调用签名、构造签名和索引签名必须有注释 |
 | `max-lines` | error | `*.test.*` 文件最多 2000 行 |
