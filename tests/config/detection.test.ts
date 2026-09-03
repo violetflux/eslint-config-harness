@@ -4,6 +4,7 @@ import path from 'node:path'
 import { afterEach, expect, test } from 'vitest'
 import {
   detectIntegrations,
+  detectNestJsScopes,
   detectTailwindEntryPoint,
   detectTypeScriptParserScopes,
   readCssDependencyFiles,
@@ -160,6 +161,27 @@ test('从继承后的 TSConfig 选项推导装饰器解析范围', () => {
       experimentalDecorators: true,
       files: ['projects/server/**/*.{ts,tsx,mts,cts}'],
     },
+  ])
+})
+
+test('从直接依赖推导 NestJS package 范围', () => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'harness-detection-'))
+  const serverDir = path.join(cwd, 'projects/server')
+  const clientDir = path.join(cwd, 'projects/client')
+
+  temporaryDirs.push(cwd)
+  mkdirSync(serverDir, { recursive: true })
+  mkdirSync(clientDir, { recursive: true })
+  writeFileSync(path.join(cwd, 'package.json'), '{}')
+  writeFileSync(path.join(serverDir, 'package.json'), JSON.stringify({
+    dependencies: { '@nestjs/common': '^11.0.0' },
+  }))
+  writeFileSync(path.join(clientDir, 'package.json'), JSON.stringify({
+    dependencies: { react: '^19.0.0' },
+  }))
+
+  expect(detectNestJsScopes(cwd)).toEqual([
+    { files: ['projects/server/**/*.{ts,tsx,mts,cts}'] },
   ])
 })
 

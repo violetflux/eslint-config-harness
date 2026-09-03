@@ -142,12 +142,21 @@ describe('harness config factory', () => {
     expect(cts.map(message => message.ruleId)).toContain('no-restricted-syntax')
   })
 
-  test('自动读取 TSConfig 并保护装饰器元数据使用的运行时导入', async () => {
+  test('自动识别 NestJS package 并完全禁止类型导入', async () => {
     const cwd = mkdtempSync(path.join(tmpdir(), 'harness-factory-'))
     const serverDir = path.join(cwd, 'projects/server')
+    const clientDir = path.join(cwd, 'projects/client')
     const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(cwd)
 
     mkdirSync(serverDir, { recursive: true })
+    mkdirSync(clientDir, { recursive: true })
+    writeFileSync(path.join(cwd, 'package.json'), '{}')
+    writeFileSync(path.join(serverDir, 'package.json'), JSON.stringify({
+      dependencies: { '@nestjs/common': '^11.0.0' },
+    }))
+    writeFileSync(path.join(clientDir, 'package.json'), JSON.stringify({
+      dependencies: { react: '^19.0.0' },
+    }))
     writeFileSync(path.join(serverDir, 'tsconfig.json'), JSON.stringify({
       compilerOptions: {
         emitDecoratorMetadata: true,
@@ -163,6 +172,7 @@ describe('harness config factory', () => {
         tailwind: false,
       })
       const parserConfig = configs.find(config => config.name === 'harness/typescript-parser-options/0')
+      const nestjsConfig = configs.find(config => config.name === 'harness/nestjs-no-type-imports/0')
       const eslint = new ESLint({
         overrideConfig: configs,
         overrideConfigFile: true,
@@ -175,14 +185,30 @@ describe('harness config factory', () => {
         `import { Dependency } from './dependency'\ntype Value = Dependency\nexport type { Value }\n`,
         { filePath: path.join(serverDir, 'plain.ts') },
       )
+      const [typeImportResult] = await eslint.lintText(
+        `import type { Dependency } from './dependency'\ntype Value = Dependency\nexport type { Value }\n`,
+        { filePath: path.join(serverDir, 'type-import.ts') },
+      )
+      const [inlineTypeImportResult] = await eslint.lintText(
+        `import { type Dependency } from './dependency'\ntype Value = Dependency\nexport type { Value }\n`,
+        { filePath: path.join(serverDir, 'inline-type-import.ts') },
+      )
+      const [clientResult] = await eslint.lintText(
+        `import { Dependency } from './dependency'\ntype Value = Dependency\nexport type { Value }\n`,
+        { filePath: path.join(clientDir, 'plain.ts') },
+      )
 
       expect(parserConfig?.files).toEqual(['projects/server/**/*.{ts,tsx,mts,cts}'])
       expect(parserConfig?.languageOptions?.parserOptions).toMatchObject({
         emitDecoratorMetadata: true,
         experimentalDecorators: true,
       })
+      expect(nestjsConfig?.files).toEqual(['projects/server/**/*.{ts,tsx,mts,cts}'])
       expect(result?.messages.map(message => message.ruleId)).not.toContain('ts/consistent-type-imports')
-      expect(plainResult?.messages.map(message => message.ruleId)).toContain('ts/consistent-type-imports')
+      expect(plainResult?.messages.map(message => message.ruleId)).not.toContain('ts/consistent-type-imports')
+      expect(typeImportResult?.messages.map(message => message.ruleId)).toContain('ts/consistent-type-imports')
+      expect(inlineTypeImportResult?.messages.map(message => message.ruleId)).toContain('ts/consistent-type-imports')
+      expect(clientResult?.messages.map(message => message.ruleId)).toContain('ts/consistent-type-imports')
     }
     finally {
       cwdSpy.mockRestore()

@@ -3,6 +3,7 @@ import antfu from '@antfu/eslint-config'
 import type { HarnessOptions } from './options.js'
 import {
   detectIntegrations,
+  detectNestJsScopes,
   detectTypeScriptParserScopes,
 } from './detection.js'
 import {
@@ -91,6 +92,17 @@ export function harness(options: HarnessOptions = {}): ReturnType<typeof antfu> 
       react: Boolean(react),
       typescript: typescript !== false,
     }))
+  }
+  if (typescript) {
+    for (const [index, scope] of detectNestJsScopes().entries()) {
+      composer.append({
+        name: `harness/nestjs-no-type-imports/${index}`,
+        files: scope.files,
+        rules: {
+          'ts/consistent-type-imports': ['error', { prefer: 'no-type-imports' }],
+        },
+      })
+    }
   }
   if (rules) {
     composer.append({

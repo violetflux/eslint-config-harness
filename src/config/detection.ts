@@ -26,6 +26,12 @@ export interface TypeScriptParserScope {
   files: string[]
 }
 
+/** 单个 NestJS package 对应的 TypeScript 文件范围 */
+export interface NestJsScope {
+  /** 禁止类型导入的 NestJS 源码范围 */
+  files: string[]
+}
+
 /** package.json 中可能声明直接依赖的字段 */
 interface PackageManifest {
   dependencies?: Record<string, string>
@@ -90,6 +96,33 @@ export function detectTypeScriptParserScopes(
 
       return depth || left.files[0]!.localeCompare(right.files[0]!)
     })
+}
+
+/** 从直接依赖 @nestjs/common 的 package.json 推导 NestJS 源码范围 */
+export function detectNestJsScopes(cwd = process.cwd()): NestJsScope[] {
+  const directories = discoverProjectFiles(cwd, '**/package.json')
+    .filter((file) => {
+      const manifest = JSON.parse(
+        readFileSync(path.join(cwd, file), 'utf8'),
+      ) as PackageManifest
+
+      return hasDependency(manifest, '@nestjs/common')
+    })
+    .map(file => normalizePath(path.dirname(file)))
+    .sort((left, right) => {
+      const depth = left.split('/').length - right.split('/').length
+
+      return depth || left.localeCompare(right)
+    })
+    .filter((directory, index, all) => !all.slice(0, index).some(parent => (
+      parent === '.' || directory.startsWith(`${parent}/`)
+    )))
+
+  return directories.map(directory => ({
+    files: [directory === '.'
+      ? '**/*.{ts,tsx,mts,cts}'
+      : `${directory}/**/*.{ts,tsx,mts,cts}`],
+  }))
 }
 
 /** 从 CSS import 图中推导唯一 Tailwind 根入口 */
@@ -159,6 +192,16 @@ function readProjectDependencies(cwd: string) {
   }
 
   return dependencies
+}
+
+/** 判断 package.json 是否直接声明指定依赖 */
+function hasDependency(manifest: PackageManifest, dependency: string) {
+  return [
+    manifest.dependencies,
+    manifest.devDependencies,
+    manifest.optionalDependencies,
+    manifest.peerDependencies,
+  ].some(records => Object.hasOwn(records ?? {}, dependency))
 }
 
 /** 按根项目 .gitignore 语义递归发现候选文件 */
