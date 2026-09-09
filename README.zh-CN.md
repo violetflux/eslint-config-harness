@@ -132,7 +132,7 @@ Antfu 不只是下面 9 条规则。它还组合了 ESLint 核心、TypeScript�
 | `unused-imports/no-unused-vars` | error；以 `_` 开头的变量、参数和 catch 参数可以不使用 |
 | `test/consistent-test-it` | error；统一使用 `test` |
 | `ts/ban-ts-comment` | error；`@ts-ignore` 必须带说明 |
-| `ts/consistent-type-imports` | error；通常要求类型使用 `import type`；NestJS package 内完全禁止类型导入 |
+| `ts/consistent-type-imports` | error；通常要求类型使用 `import type`；最近一层 `package.json` 声明了 `@nestjs/common` 的包内完全禁止类型导入，嵌套子包独立判断（包括开发依赖） |
 | `no-restricted-syntax` | error；禁止星号导出，私有成员以 `_` 开头；React JSX 另有限制 |
 | `jsdoc/require-jsdoc` | error；TypeScript interface 及其成员必须有注释 |
 | `max-lines` | error；测试文件最多 2000 行 |

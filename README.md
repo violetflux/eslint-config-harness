@@ -132,7 +132,7 @@ Both presets add these rules on top of Antfu:
 | `unused-imports/no-unused-vars` | error; variables, parameters, and catch parameters prefixed with `_` may be unused |
 | `test/consistent-test-it` | error; consistently use `test` |
 | `ts/ban-ts-comment` | error; `@ts-ignore` requires a description |
-| `ts/consistent-type-imports` | error; normally require `import type`; completely disallow type imports inside NestJS packages |
+| `ts/consistent-type-imports` | error; normally require `import type`; disallow type imports when the nearest `package.json` declares `@nestjs/common` (including dev dependencies); nested packages are evaluated independently |
 | `no-restricted-syntax` | error; disallow star exports, require `_` for private members, and add React JSX restrictions |
 | `jsdoc/require-jsdoc` | error; TypeScript interfaces and their members require documentation |
 | `max-lines` | error; test files may contain at most 2,000 lines |

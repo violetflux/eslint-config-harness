@@ -28,6 +28,8 @@ export interface TypeScriptParserScope {
 
 /** 单个 NestJS package 对应的 TypeScript 文件范围 */
 export interface NestJsScope {
+  /** 当前包不拥有的嵌套 package 范围 */
+  ignores: string[]
   /** 禁止类型导入的 NestJS 源码范围 */
   files: string[]
 }
@@ -100,28 +102,27 @@ export function detectTypeScriptParserScopes(
 
 /** 从直接依赖 @nestjs/common 的 package.json 推导 NestJS 源码范围 */
 export function detectNestJsScopes(cwd = process.cwd()): NestJsScope[] {
-  const directories = discoverProjectFiles(cwd, '**/package.json')
-    .filter((file) => {
+  const packages = discoverProjectFiles(cwd, '**/package.json')
+    .map((file) => {
       const manifest = JSON.parse(
         readFileSync(path.join(cwd, file), 'utf8'),
       ) as PackageManifest
 
-      return hasDependency(manifest, '@nestjs/common')
+      return {
+        directory: normalizePath(path.dirname(file)),
+        nestjs: hasDependency(manifest, '@nestjs/common'),
+      }
     })
-    .map(file => normalizePath(path.dirname(file)))
-    .sort((left, right) => {
-      const depth = left.split('/').length - right.split('/').length
 
-      return depth || left.localeCompare(right)
-    })
-    .filter((directory, index, all) => !all.slice(0, index).some(parent => (
-      parent === '.' || directory.startsWith(`${parent}/`)
-    )))
-
-  return directories.map(directory => ({
+  return packages.filter(pkg => pkg.nestjs).map(({ directory }) => ({
     files: [directory === '.'
       ? '**/*.{ts,tsx,mts,cts}'
       : `${directory}/**/*.{ts,tsx,mts,cts}`],
+    ignores: packages
+      .filter(pkg => pkg.directory !== directory && (
+        directory === '.' || pkg.directory.startsWith(`${directory}/`)
+      ))
+      .map(pkg => `${pkg.directory}/**`),
   }))
 }
 

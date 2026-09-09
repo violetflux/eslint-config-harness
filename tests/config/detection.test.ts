@@ -181,7 +181,7 @@ test('从直接依赖推导 NestJS package 范围', () => {
   }))
 
   expect(detectNestJsScopes(cwd)).toEqual([
-    { files: ['projects/server/**/*.{ts,tsx,mts,cts}'] },
+    { files: ['projects/server/**/*.{ts,tsx,mts,cts}'], ignores: [] },
   ])
 })
 

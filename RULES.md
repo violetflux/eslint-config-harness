@@ -511,7 +511,7 @@ Antfu 还组合了 ESLint 核心、TypeScript、import、node、style、regexp�
 | `unused-imports/no-unused-vars` | error | 以 `_` 开头的变量、参数和 catch 参数允许未使用 |
 | `test/consistent-test-it` | error | 测试声明统一使用 `test` |
 | `ts/ban-ts-comment` | error | `@ts-check`、`@ts-expect-error`、`@ts-nocheck` 被禁止；`@ts-ignore` 必须带说明 |
-| `ts/consistent-type-imports` | error | 通常要求类型使用 `import type`；直接依赖 `@nestjs/common` 的 package 内完全禁止类型导入，保护依赖注入及其他装饰器元数据 |
+| `ts/consistent-type-imports` | error | 通常要求类型使用 `import type`；按最近一层 `package.json` 判断：声明了 `@nestjs/common`（包括开发依赖）的包内完全禁止类型导入，保护依赖注入及其他装饰器元数据；嵌套子包独立判断，不继承父包的 NestJS 规则 |
 | `no-restricted-syntax` | error | 禁止 const enum、`export =`、星号导出；私有成员以 `_` 开头；React JSX 另限制函数表达式和箭头函数组件 |
 | `jsdoc/require-jsdoc` | error | TypeScript interface 及其属性、方法、调用签名、构造签名和索引签名必须有注释 |
 | `max-lines` | error | `*.test.*` 文件最多 2000 行 |

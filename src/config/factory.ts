@@ -98,6 +98,7 @@ export function harness(options: HarnessOptions = {}): ReturnType<typeof antfu> 
       composer.append({
         name: `harness/nestjs-no-type-imports/${index}`,
         files: scope.files,
+        ignores: scope.ignores,
         rules: {
           'ts/consistent-type-imports': ['error', { prefer: 'no-type-imports' }],
         },
