@@ -24,6 +24,21 @@ function lint(code: string, options?: unknown) {
 
 /** -------------------- 测试 -------------------- */
 describe('react-hook-order', () => {
+  test('默认将 useAsyncEffect 归入 effect 阶段', () => {
+    expect(lint(`
+      function useData() {
+        const [id] = useState('')
+        useAsyncEffect(async () => { await fetch(id) }, [id])
+      }
+    `)).toEqual([])
+    expect(lint(`
+      function useData() {
+        useAsyncEffect(async () => { await fetch('/data') }, [])
+        const [id] = useState('')
+      }
+    `)).toMatchObject([{ messageId: 'wrongOrder' }])
+  })
+
   test('接受 React 标准 Hook 的默认组织顺序', () => {
     const messages = lint(`
       function Profile() {

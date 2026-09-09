@@ -81,6 +81,7 @@ const defaultGroups: Record<string, HookMatcher[]> = {
     'useEffectEvent',
   ],
   effect: [
+    'useAsyncEffect',
     'useDebugValue',
     'useEffect',
     'useInsertionEffect',

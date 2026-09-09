@@ -171,7 +171,7 @@ export default harness({ typescript: false })
 
 ### React
 
-检测到 React 时会启用 `react-hooks/*` 推荐规则。`strict` 还会启用 `harness/react-hook-order`、`harness/short-jsx-return` 和 React JSX 代码组织策略。
+检测到 React 时会启用 `react-hooks/*` 推荐规则，默认支持 `useAsyncEffect` 的异步回调和依赖检查，无需手动配置 `additionalEffectHooks`。`strict` 还会启用 `harness/react-hook-order`、`harness/short-jsx-return` 和 React JSX 代码组织策略。
 
 ```js
 export default harness({

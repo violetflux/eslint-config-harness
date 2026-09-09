@@ -172,7 +172,7 @@ import DefaultValue, {
 | `memo` | `useCallback`、`useMemo` |
 | `event` | 当前函数顶层声明的事件函数 |
 | `effectEvent` | `useEffectEvent` |
-| `effect` | `useDebugValue`、`useEffect`、`useInsertionEffect`、`useLayoutEffect` |
+| `effect` | `useAsyncEffect`、`useDebugValue`、`useEffect`、`useInsertionEffect`、`useLayoutEffect` |
 
 | 参数 | 类型 | 默认值 | 作用 |
 | --- | --- | --- | --- |
@@ -555,7 +555,7 @@ items.map(item => <Item key={item.id} item={item} />)
 
 ### React
 
-启用 React 后会加载 `eslint-plugin-react-hooks` 的 recommended Flat Config。其中 `react-hooks/exhaustive-deps`、`react-hooks/incompatible-library`、`react-hooks/unsupported-syntax` 为 `warn`，其他启用的 `react-hooks/*` 规则为 `error`。`strict` 还会启用：
+启用 React 后会加载 `eslint-plugin-react-hooks` 的 recommended Flat Config。默认将 `useAsyncEffect` 纳入依赖检查，并允许其异步回调；缺失依赖和条件调用仍会报告，普通 `useEffect` 的异步回调仍会报错。此适配按直接调用名称 `useAsyncEffect` 匹配，不追踪导入别名或任意命名空间调用。其中 `react-hooks/exhaustive-deps`、`react-hooks/incompatible-library`、`react-hooks/unsupported-syntax` 为 `warn`，其他启用的 `react-hooks/*` 规则为 `error`。`strict` 还会启用：
 
 - `harness/react-hook-order`
 - `harness/short-jsx-return`

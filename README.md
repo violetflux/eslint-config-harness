@@ -173,7 +173,7 @@ export default harness({ typescript: false })
 
 ### React
 
-When React is detected, Harness enables the recommended `react-hooks/*` rules. `strict` additionally enables `harness/react-hook-order`, `harness/short-jsx-return`, and React JSX organization policies.
+When React is detected, Harness enables the recommended `react-hooks/*` rules, including async callbacks and dependency checks for `useAsyncEffect` without manual `additionalEffectHooks` configuration. `strict` additionally enables `harness/react-hook-order`, `harness/short-jsx-return`, and React JSX organization policies.
 
 ```js
 export default harness({

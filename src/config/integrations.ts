@@ -1,3 +1,4 @@
+import { withAsyncEffect } from './react-async-effect.js'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -27,6 +28,18 @@ export async function createReactConfig(options: true | HarnessReactOptions) {
     ...reactHooks.configs.flat.recommended,
     name: 'harness/react',
     files,
+    plugins: {
+      'react-hooks': {
+        ...reactHooks,
+        rules: {
+          ...reactHooks.rules,
+          'exhaustive-deps': withAsyncEffect(reactHooks.rules['exhaustive-deps']),
+        },
+      },
+    },
+    settings: {
+      'react-hooks': { additionalEffectHooks: '^useAsyncEffect$' },
+    },
   } as TypedFlatConfigItem
 }
 
