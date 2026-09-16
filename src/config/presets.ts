@@ -11,6 +11,7 @@ export const recommendedRules = {} satisfies Linter.RulesRecord
 export const strictRules = {
   'harness/class-name-layout': 'warn',
   'harness/cn-argument-layout': 'warn',
+  'harness/max-line-length': 'error',
   'harness/named-import-export-layout': 'error',
   'harness/no-redundant-field-alias': 'warn',
   'harness/prefer-cn': 'warn',

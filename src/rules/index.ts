@@ -1,6 +1,7 @@
 import type { Rule } from 'eslint'
 import { rule as classNameLayout } from './class-name-layout.js'
 import { rule as cnArgumentLayout } from './cn-argument-layout.js'
+import { rule as maxLineLength } from './max-line-length.js'
 import { rule as namedImportExportLayout } from './named-import-export-layout.js'
 import { rule as noRedundantFieldAlias } from './no-redundant-field-alias.js'
 import { rule as preferCn } from './prefer-cn.js'
@@ -15,6 +16,7 @@ import { rule as shortJsxReturn } from './short-jsx-return.js'
 export const rules: Record<HarnessRuleName, Rule.RuleModule> = {
   'class-name-layout': classNameLayout,
   'cn-argument-layout': cnArgumentLayout,
+  'max-line-length': maxLineLength,
   'named-import-export-layout': namedImportExportLayout,
   'no-redundant-field-alias': noRedundantFieldAlias,
   'prefer-cn': preferCn,
@@ -29,6 +31,7 @@ export const rules: Record<HarnessRuleName, Rule.RuleModule> = {
 export type HarnessRuleName
   = | 'class-name-layout'
     | 'cn-argument-layout'
+    | 'max-line-length'
     | 'named-import-export-layout'
     | 'no-redundant-field-alias'
     | 'prefer-cn'

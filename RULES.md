@@ -4,7 +4,7 @@
 
 本文档说明：
 
-- Harness 自己实现的 10 条 `harness/*` 规则
+- Harness 自己实现的 11 条 `harness/*` 规则
 - `@antfu/eslint-config` 提供的 9 条 `antfu/*` 规则
 - Harness 在 Antfu 基础上新增、关闭或调整的规则
 - 规则级别、配置参数、诊断信息、触发示例和符合示例
@@ -63,12 +63,13 @@ eslint . --fix
 
 ## Harness 自己实现的规则
 
-默认 `strict` 级别如下；`recommended` 只注册插件，不启用任何 Harness 内置规则，也不启用 `style/max-len` 行宽策略。
+默认 `strict` 级别如下；`recommended` 只注册插件，不启用任何 Harness 内置规则，也不启用 `harness/max-line-length` 行宽策略。
 
 | 规则 | strict | 自动修复 |
 | --- | --- | --- |
 | `harness/short-jsx-return` | error，仅 React | 支持 |
 | `harness/prefer-line-wrap` | warn | 不支持 |
+| `harness/max-line-length` | error | 不支持 |
 | `harness/named-import-export-layout` | error | 支持 |
 | `harness/react-hook-order` | error，仅 React | 不支持 |
 | `harness/prefer-cn` | warn | 部分支持 |
@@ -82,29 +83,19 @@ eslint . --fix
 
 `strict` 对所有适用源码逐行检查，不依赖 React：
 
-- 小于 75 字符：不产生行宽诊断，不要求折叠为单行。
-- 75～120 字符（包含边界）：`harness/prefer-line-wrap` 报 `warn`，建议换行。
-- 超过 120 字符：`style/max-len` 报 `error`，不重复产生行宽警告。
+- 小于 50 字符：不产生行宽诊断，不要求折叠为单行。
+- 50～100 字符（包含边界）：`harness/prefer-line-wrap` 报 `warn`，建议换行。
+- 超过 100 字符：`harness/max-line-length` 报 `error`，不重复产生行宽警告。
 
 两条规则都不自动修复。忽略独立和行尾注释；夹在代码中间的块注释沿用 Stylistic 行宽计算，不单独扣除。包含 URL、字符串、模板字符串或正则的整行豁免，同一行的其他代码也不会检查。
 命名 import/export 声明跳过通用警告，由 `harness/named-import-export-layout` 管理；`export const` 等普通声明仍检查。
-其余行包含缩进和分号，按 Unicode 字符计数，Tab 使用 4 列制表位。
+两档计数均先移除整行所有普通空格（U+0020）和 Tab，包括行首缩进与代码之间的空白，再按 Unicode 字符计数。分号、括号、运算符等仍计入；不会实际删除源码中的空格。
 
-`harness/prefer-line-wrap` 无配置项。Harness 工厂 strict 策略启用的 `style/max-len` 配置为：
+`harness/prefer-line-wrap` 和 `harness/max-line-length` 共用计数和豁免逻辑，均无配置项，在 strict 预设中分别为 warn 和 error。Harness 工厂关闭 `style/max-len`，避免其包含空格的计数方式重复报错。原先针对 `style/max-len` 的自定义配置如需继续控制硬上限，应迁移到新的规则策略。
 
-```js
-['error', {
-  code: 120,
-  tabWidth: 4,
-  ignoreComments: true,
-  ignoreUrls: true,
-  ignoreStrings: true,
-  ignoreTemplateLiterals: true,
-  ignoreRegExpLiterals: true,
-}]
-```
+此变更针对通用行宽检查；命名导入导出与 JSX 的专用布局阈值保持各自定义。列表换行应从第一个成员开始，避免 `antfu/consistent-list-newline` 合回单行。
 
-自定义硬上限或豁免时应同步调整通用警告。列表换行应从第一个成员开始，避免 `antfu/consistent-list-newline` 合回单行。
+单行 JSX 本身去空白后 <50 字符时，通用警告跳过其所在行，避免 `return` 等外围代码导致折叠后反而要求换行；超过 100 的硬上限仍然检查。
 
 ### `harness/short-jsx-return`
 

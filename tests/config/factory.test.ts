@@ -335,7 +335,7 @@ describe('harness config factory', () => {
 })
 
 test.each(['strict', 'recommended'] as const)('%s 行宽策略不依赖 React', async (preset) => {
-  const lines = [74, 75, 119, 120, 121].map(length => 'x'.repeat(length))
+  const lines = [49, 50, 99, 100, 101].map(length => 'x'.repeat(length))
   const messages = await lintFixture('line-width.js', lines.join('\n'), {
     preset,
     react: false,
@@ -343,14 +343,14 @@ test.each(['strict', 'recommended'] as const)('%s 行宽策略不依赖 React', 
     tailwind: false,
     typescript: false,
   })
-  expect(messages.filter(message => ['harness/prefer-line-wrap', 'style/max-len'].includes(message.ruleId ?? '')))
+  expect(messages.filter(message => ['harness/prefer-line-wrap', 'harness/max-line-length'].includes(message.ruleId ?? '')))
     .toMatchObject(preset === 'recommended'
       ? []
       : [
           { line: 2, severity: 1, ruleId: 'harness/prefer-line-wrap' },
           { line: 3, severity: 1, ruleId: 'harness/prefer-line-wrap' },
           { line: 4, severity: 1, ruleId: 'harness/prefer-line-wrap' },
-          { line: 5, severity: 2, ruleId: 'style/max-len' },
+          { line: 5, severity: 2, ruleId: 'harness/max-line-length' },
         ])
 })
 
@@ -359,8 +359,8 @@ test('严格行宽检查忽略注释但保留行尾注释前的代码检查', as
     `//${'x'.repeat(160)}`,
     `/*${'x'.repeat(160)}*/`,
     `const x = 1 //${'x'.repeat(160)}`,
-    `${'x'.repeat(75)} //${'x'.repeat(160)}`,
-    `${'x'.repeat(121)} //${'x'.repeat(160)}`,
+    `${'x'.repeat(50)} //${'x'.repeat(160)}`,
+    `${'x'.repeat(101)} //${'x'.repeat(160)}`,
   ]
   const messages = await lintFixture('comments.js', lines.join('\n'), {
     react: false,
@@ -368,10 +368,10 @@ test('严格行宽检查忽略注释但保留行尾注释前的代码检查', as
     tailwind: false,
     typescript: false,
   })
-  expect(messages.filter(message => ['harness/prefer-line-wrap', 'style/max-len'].includes(message.ruleId ?? '')))
+  expect(messages.filter(message => ['harness/prefer-line-wrap', 'harness/max-line-length'].includes(message.ruleId ?? '')))
     .toMatchObject([
       { line: 4, severity: 1, ruleId: 'harness/prefer-line-wrap' },
-      { line: 5, severity: 2, ruleId: 'style/max-len' },
+      { line: 5, severity: 2, ruleId: 'harness/max-line-length' },
     ])
 })
 
@@ -394,13 +394,13 @@ test('行宽与导入导出、列表换行和 JSX 折叠兼容', async () => {
     `export const url = 'https://${'x'.repeat(140)}'`,
     `export const pattern = /${'x'.repeat(140)}/`,
     `export const template = \`${'x'.repeat(140)}\``,
-    ...[74, 75].map(length => `export function View() {\n  return (\n    <Component value={${'x'.repeat(length - '  return <Component value={} />'.length)}} />\n  )\n}`),
+    ...[45, 49].map(length => `export function View() {\n  return (\n    <Component value={${'x'.repeat(length - '  return <Component value={} />'.length)}} />\n  )\n}`),
   ]
   for (const source of samples) {
     const [result] = await eslint.lintText(source, { filePath: 'layout.tsx' })
     const conflicts = result!.messages.filter(message => [
       'harness/prefer-line-wrap',
-      'style/max-len',
+      'harness/max-line-length',
       'harness/short-jsx-return',
       'harness/named-import-export-layout',
       'antfu/consistent-list-newline',
@@ -423,4 +423,15 @@ test.each(['strict', 'recommended'] as const)('%s 短 JSX 默认启用范围与�
   expect(result!.messages.filter(message => /short-jsx-return|prefer-line-wrap|max-len|consistent-list-newline/.test(message.ruleId ?? ''))).toEqual([])
   const [second] = await eslint.lintText(output, { filePath: 'short-layout.tsx' })
   expect(second!.output ?? output).toBe(output)
+})
+
+test('strict 关闭包含缩进的原始 max-len，统一使用非空格字符计数', async () => {
+  const eslint = new ESLint({
+    overrideConfigFile: true,
+    overrideConfig: await resolveConfig({ react: false, kerros: false, tailwind: false }),
+  })
+  const config = await eslint.calculateConfigForFile('width.ts')
+  expect(config.rules['style/max-len'][0]).toBe(0)
+  const [result] = await eslint.lintText(`${' '.repeat(160)}call(value)`, { filePath: 'width.ts' })
+  expect(result!.messages.filter(message => ['style/max-len', 'harness/max-line-length', 'harness/prefer-line-wrap'].includes(message.ruleId ?? ''))).toEqual([])
 })

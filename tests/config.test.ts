@@ -8,6 +8,7 @@ describe('harness plugin exports', () => {
     expect(Object.keys(rules)).toEqual([
       'class-name-layout',
       'cn-argument-layout',
+      'max-line-length',
       'named-import-export-layout',
       'no-redundant-field-alias',
       'prefer-cn',
@@ -29,6 +30,7 @@ describe('harness plugin exports', () => {
     expect(configs.strict[1]?.rules).toEqual({
       'harness/class-name-layout': 'warn',
       'harness/cn-argument-layout': 'warn',
+      'harness/max-line-length': 'error',
       'harness/named-import-export-layout': 'error',
       'harness/no-redundant-field-alias': 'warn',
       'harness/prefer-cn': 'warn',
