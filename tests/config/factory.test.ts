@@ -335,7 +335,7 @@ describe('harness config factory', () => {
 })
 
 test.each(['strict', 'recommended'] as const)('%s 行宽策略不依赖 React', async (preset) => {
-  const lines = [59, 60, 119, 120, 121].map(length => `//${'x'.repeat(length - 2)}`)
+  const lines = [74, 75, 119, 120, 121].map(length => `'${'x'.repeat(length - 2)}'`)
   const messages = await lintFixture('line-width.js', lines.join('\n'), {
     preset,
     react: false,
@@ -352,4 +352,25 @@ test.each(['strict', 'recommended'] as const)('%s 行宽策略不依赖 React', 
           { line: 4, severity: 1, ruleId: 'harness/prefer-line-wrap' },
           { line: 5, severity: 2, ruleId: 'style/max-len' },
         ])
+})
+
+test('严格行宽检查忽略注释但保留行尾注释前的代码检查', async () => {
+  const lines = [
+    `//${'x'.repeat(160)}`,
+    `/*${'x'.repeat(160)}*/`,
+    `const x = 1 //${'x'.repeat(160)}`,
+    `'${'x'.repeat(73)}' //${'x'.repeat(160)}`,
+    `'${'x'.repeat(119)}' //${'x'.repeat(160)}`,
+  ]
+  const messages = await lintFixture('comments.js', lines.join('\n'), {
+    react: false,
+    kerros: false,
+    tailwind: false,
+    typescript: false,
+  })
+  expect(messages.filter(message => ['harness/prefer-line-wrap', 'style/max-len'].includes(message.ruleId ?? '')))
+    .toMatchObject([
+      { line: 4, severity: 1, ruleId: 'harness/prefer-line-wrap' },
+      { line: 5, severity: 2, ruleId: 'style/max-len' },
+    ])
 })

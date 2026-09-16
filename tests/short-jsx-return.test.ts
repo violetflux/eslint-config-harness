@@ -130,3 +130,10 @@ function NestedParentheses() {
     })
   })
 })
+
+test.each([74, 75, 76])('jsx 默认折叠上限：%i 字符', (length) => {
+  const jsx = `<Component value="${'x'.repeat(length - '  return <Component value="" />'.length)}" />`
+  const code = `function Message() {\n  return (\n    ${jsx}\n  )\n}`
+  expect(lint(code).map(message => message.messageId)).toEqual(length <= 75 ? ['useSingleLine'] : [])
+  expect(fix(code).fixed).toBe(length <= 75)
+})

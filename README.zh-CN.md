@@ -74,8 +74,8 @@ const recommendedConfig = harness({ preset: 'recommended' })
 
 | 规则 | 默认级别 | 自动修复 | 作用 |
 | --- | --- | --- | --- |
-| `harness/short-jsx-return` | 默认 off | 支持 | 短 JSX return 保持单行 |
-| `harness/prefer-line-wrap` | warn | 不支持 | 60～120 字符建议换行；超过 120 由 `style/max-len` 报 error |
+| `harness/short-jsx-return` | 默认 off | 支持 | 可安全折叠的短 JSX return 保持单行（默认上限 75） |
+| `harness/prefer-line-wrap` | warn | 不支持 | 75～120 字符建议换行；超过 120 由 `style/max-len` 报 error |
 | `harness/named-import-export-layout` | error | 支持 | 统一命名导入和导出的布局 |
 | `harness/react-hook-order` | React 下 error | 不支持 | 统一 React Hook 的阶段顺序 |
 | `harness/prefer-cn` | warn | 部分支持 | class 组合优先使用 `cn` |
@@ -85,7 +85,7 @@ const recommendedConfig = harness({ preset: 'recommended' })
 | `harness/no-redundant-field-alias` | warn | 不支持 | 减少冗余字段别名 |
 | `harness/prefer-local-transformation` | warn | 不支持 | 建议先命名关键派生字段再投影 |
 
-行宽检查仅在 `strict` 中启用：60～120 字符（含边界）由 `harness/prefer-line-wrap` 报 `warn`，超过 120 由 `style/max-len` 报 `error`，不重复提示。小于 60 不产生行宽诊断，也不要求强制单行；两条行宽规则都不自动修复。检查包含缩进、注释、URL 和字符串，按 Unicode 字符计数，Tab 使用 4 列制表位。`recommended` 不启用这两条规则。
+行宽检查仅在 `strict` 中启用：75～120 字符（含边界）由 `harness/prefer-line-wrap` 报 `warn`，超过 120 由 `style/max-len` 报 `error`，不重复提示。小于 75 不产生行宽诊断，也不要求强制单行；两条行宽规则都不自动修复。忽略独立注释和行尾注释，注释前代码仍检查；长度包含缩进、URL 和字符串，按 Unicode 字符计数，Tab 使用 4 列制表位。`recommended` 不启用这两条规则。
 
 这里的 `error` 会让 ESLint 以非零状态退出，通常会阻止 CI；`warn` 会显示问题但默认不阻止 CI；`off` 表示关闭规则。项目可以在顶层 `rules` 中修改级别。
 

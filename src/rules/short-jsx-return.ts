@@ -20,7 +20,7 @@ interface ShortJsxReturn {
 
 /** -------------------- 常量 -------------------- */
 /** 默认允许折叠为单行的最大字符数 */
-const defaultMaxLength = 120
+const defaultMaxLength = 75
 
 /** -------------------- 内部函数 -------------------- */
 /** 读取只含冗余括号和空白的短 JSX return */

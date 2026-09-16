@@ -1,9 +1,9 @@
 import type { Rule } from 'eslint'
 
-/** 提示 60～120 字符的行换行，Tab 与 max-len 的四列制表位一致 */
+/** 提示 75～120 字符的行换行，Tab 与 max-len 的四列制表位一致 */
 export const rule: Rule.RuleModule = {
   meta: {
-    docs: { description: 'Suggest wrapping lines between 60 and 120 characters' },
+    docs: { description: 'Suggest wrapping lines between 75 and 120 characters' },
     messages: { preferWrap: 'This line is {{length}} characters long. Consider wrapping it.' },
     schema: [],
     type: 'layout',
@@ -11,11 +11,48 @@ export const rule: Rule.RuleModule = {
   create(context) {
     return {
       Program() {
+        const comments = context.sourceCode.getAllComments().map((comment) => {
+          if (!comment.range)
+            return comment
+          const node = context.sourceCode.getNodeByRangeIndex(comment.range[0]) as {
+            /** JSX 扩展节点种类 */
+            type: string
+            /** 包含注释的 JSX 表达式容器 */
+            parent?: { type: string, loc?: typeof comment.loc }
+          } | null
+          const parent = node?.parent
+          if (node?.type === 'JSXEmptyExpression' && parent?.type === 'JSXExpressionContainer'
+            && parent.loc?.start.line === parent.loc?.end.line) {
+            return parent
+          }
+          return comment
+        })
         context.sourceCode.lines.forEach((line, index) => {
-          let length = 0
-          for (const character of line)
-            length += character === '\t' ? 4 - length % 4 : 1
-          if (length >= 60 && length <= 120) {
+          const lineNumber = index + 1
+          let measured = line
+          // 与 style/max-len ignoreComments 一致：忽略独立注释和行尾注释。
+          for (const comment of comments.toReversed()) {
+            if (!comment.loc)
+              continue
+            const { start, end } = comment.loc
+            if (start.line > lineNumber || end.line < lineNumber)
+              continue
+            if (end.line === lineNumber && end.column !== measured.length)
+              continue
+            if (start.line < lineNumber || !measured.slice(0, start.column).trim()) {
+              measured = ''
+              break
+            }
+            measured = measured.slice(0, start.column).trimEnd()
+          }
+          // 与 Stylistic 一样，以 UTF-16 列位置展开 Tab，再计算 Unicode 字符数。
+          let extraWidth = 0
+          for (let offset = 0; offset < measured.length; offset++) {
+            if (measured[offset] === '\t')
+              extraWidth += 4 - (offset + extraWidth) % 4 - 1
+          }
+          const length = Array.from(measured).length + extraWidth
+          if (length >= 75 && length <= 120) {
             context.report({
               loc: { start: { line: index + 1, column: 0 }, end: { line: index + 1, column: line.length } },
               messageId: 'preferWrap',
