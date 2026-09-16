@@ -9,8 +9,32 @@ export const rule: Rule.RuleModule = {
     type: 'layout',
   },
   create(context) {
+    const declarationLines = new Set<number>()
+    /** 命名导入导出的布局由专用规则负责 */
+    const skipDeclaration = (node: Rule.Node) => {
+      if (!node.loc || !('specifiers' in node)
+        || !node.specifiers.some(specifier => ['ImportSpecifier', 'ExportSpecifier'].includes(specifier.type))) {
+        return
+      }
+      for (let line = node.loc.start.line; line <= node.loc.end.line; line++)
+        declarationLines.add(line)
+    }
     return {
-      Program() {
+      ImportDeclaration: skipDeclaration,
+      ExportNamedDeclaration: skipDeclaration,
+      'Program:exit': function () {
+        const literalLines = new Set<number>()
+        for (const token of context.sourceCode.getTokens(context.sourceCode.ast)) {
+          const attribute = token.type === 'JSXText'
+            ? context.sourceCode.getNodeByRangeIndex(token.range[0] - 1)
+            : undefined
+          if (!['String', 'Template', 'RegularExpression'].includes(token.type)
+            && (attribute as { type?: string } | undefined)?.type !== 'JSXAttribute') {
+            continue
+          }
+          for (let line = token.loc.start.line; line <= token.loc.end.line; line++)
+            literalLines.add(line)
+        }
         const comments = context.sourceCode.getAllComments().map((comment) => {
           if (!comment.range)
             return comment
@@ -29,6 +53,8 @@ export const rule: Rule.RuleModule = {
         })
         context.sourceCode.lines.forEach((line, index) => {
           const lineNumber = index + 1
+          if (declarationLines.has(lineNumber) || literalLines.has(lineNumber))
+            return
           let measured = line
           // 与 style/max-len ignoreComments 一致：忽略独立注释和行尾注释。
           for (const comment of comments.toReversed()) {
@@ -45,6 +71,8 @@ export const rule: Rule.RuleModule = {
             }
             measured = measured.slice(0, start.column).trimEnd()
           }
+          if (/[^:/?#]:\/\/[^?#]/u.test(measured))
+            return
           // 与 Stylistic 一样，以 UTF-16 列位置展开 Tab，再计算 Unicode 字符数。
           let extraWidth = 0
           for (let offset = 0; offset < measured.length; offset++) {

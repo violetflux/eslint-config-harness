@@ -20,7 +20,7 @@ interface ShortJsxReturn {
 
 /** -------------------- 常量 -------------------- */
 /** 默认允许折叠为单行的最大字符数 */
-const defaultMaxLength = 75
+const defaultMaxLength = 74
 
 /** -------------------- 内部函数 -------------------- */
 /** 读取只含冗余括号和空白的短 JSX return */
@@ -71,7 +71,14 @@ function readShortJsxReturn(
   }
 
   const hasSemicolon = sourceCode.getLastToken(node)?.value === ';'
-  const length = returnToken.loc.start.column + `return ${jsx}`.length
+  const prefix = sourceCode.lines[returnToken.loc.start.line - 1]!.slice(0, returnToken.loc.start.column)
+  const singleLine = `${prefix}return ${jsx}${hasSemicolon ? ';' : ''}`
+  let extraWidth = 0
+  for (let offset = 0; offset < singleLine.length; offset++) {
+    if (singleLine[offset] === '\t')
+      extraWidth += 4 - (offset + extraWidth) % 4 - 1
+  }
+  const length = Array.from(singleLine).length + extraWidth
 
   if (length > maxLength)
     return

@@ -86,21 +86,38 @@ eslint . --fix
 - 75～120 字符（包含边界）：`harness/prefer-line-wrap` 报 `warn`，建议换行。
 - 超过 120 字符：`style/max-len` 报 `error`，不重复产生行宽警告。
 
-两条规则都不自动修复。忽略独立注释和行尾注释，注释前代码仍检查；长度包含缩进、字符串和分号，按 Unicode 字符计数，Tab 使用 4 列制表位。默认不豁免 URL 或字符串；夹在代码中间的块注释沿用 Stylistic 行宽计算，不单独扣除。
-`harness/prefer-line-wrap` 无配置项；`style/max-len` 配置为 `['error', { code: 120, tabWidth: 4, ignoreComments: true }]`，由 Harness 工厂的 strict 策略启用。修改硬上限时应同时调整或关闭警告规则。
+两条规则都不自动修复。忽略独立和行尾注释；夹在代码中间的块注释沿用 Stylistic 行宽计算，不单独扣除。包含 URL、字符串、模板字符串或正则的整行豁免，同一行的其他代码也不会检查。
+命名 import/export 声明跳过通用警告，由 `harness/named-import-export-layout` 管理；`export const` 等普通声明仍检查。
+其余行包含缩进和分号，按 Unicode 字符计数，Tab 使用 4 列制表位。
+
+`harness/prefer-line-wrap` 无配置项。Harness 工厂 strict 策略启用的 `style/max-len` 配置为：
+
+```js
+['error', {
+  code: 120,
+  tabWidth: 4,
+  ignoreComments: true,
+  ignoreUrls: true,
+  ignoreStrings: true,
+  ignoreTemplateLiterals: true,
+  ignoreRegExpLiterals: true,
+}]
+```
+
+自定义硬上限或豁免时应同步调整通用警告。列表换行应从第一个成员开始，避免 `antfu/consistent-list-newline` 合回单行。
 
 ### `harness/short-jsx-return`
 
-短 JSX 能放在一行时，不要只为 JSX 添加一层多行括号。
+短 JSX 折叠后小于 75 字符时才要求单行，包含缩进和分号。恰好 75 不折叠，避免与行宽警告重叠。
 
 - 默认级别：`off`，仅供手动启用
-- 默认参数：`maxLength: 75`
+- 默认参数：`maxLength: 74`
 - 自动修复：支持
 - 诊断：`useSingleLine`，提示折叠后的实际字符数
 
 | 参数 | 类型 | 默认值 | 作用 |
 | --- | --- | --- | --- |
-| `maxLength` | 正整数 | `75` | `return JSX` 折叠为一行后的最大长度 |
+| `maxLength` | 正整数 | `74` | `return JSX` 折叠为一行后的最大长度 |
 
 会触发规则：
 

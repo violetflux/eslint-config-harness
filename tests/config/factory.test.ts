@@ -335,7 +335,7 @@ describe('harness config factory', () => {
 })
 
 test.each(['strict', 'recommended'] as const)('%s 行宽策略不依赖 React', async (preset) => {
-  const lines = [74, 75, 119, 120, 121].map(length => `'${'x'.repeat(length - 2)}'`)
+  const lines = [74, 75, 119, 120, 121].map(length => 'x'.repeat(length))
   const messages = await lintFixture('line-width.js', lines.join('\n'), {
     preset,
     react: false,
@@ -359,8 +359,8 @@ test('严格行宽检查忽略注释但保留行尾注释前的代码检查', as
     `//${'x'.repeat(160)}`,
     `/*${'x'.repeat(160)}*/`,
     `const x = 1 //${'x'.repeat(160)}`,
-    `'${'x'.repeat(73)}' //${'x'.repeat(160)}`,
-    `'${'x'.repeat(119)}' //${'x'.repeat(160)}`,
+    `${'x'.repeat(75)} //${'x'.repeat(160)}`,
+    `${'x'.repeat(121)} //${'x'.repeat(160)}`,
   ]
   const messages = await lintFixture('comments.js', lines.join('\n'), {
     react: false,
@@ -373,4 +373,39 @@ test('严格行宽检查忽略注释但保留行尾注释前的代码检查', as
       { line: 4, severity: 1, ruleId: 'harness/prefer-line-wrap' },
       { line: 5, severity: 2, ruleId: 'style/max-len' },
     ])
+})
+
+test('行宽与导入导出、列表换行和 JSX 折叠兼容', async () => {
+  const eslint = new ESLint({
+    overrideConfigFile: true,
+    fix: true,
+    overrideConfig: await resolveConfig({
+      react: true,
+      kerros: false,
+      tailwind: false,
+      rules: { 'harness/short-jsx-return': 'error' },
+    }),
+  })
+  const longName = 'x'.repeat(80)
+  const samples = [
+    `import type { ThreadContextBudget, ThreadContextBudgetEstimation } from '@qygent/protocol'\nexport type { ThreadContextBudget, ThreadContextBudgetEstimation }`,
+    `const ${longName} = 1\nexport { ${longName} }`,
+    `processData(\n  firstArgumentWithLongName,\n  secondArgumentWithLongName,\n  thirdArgumentWithLongName,\n)`,
+    `export const url = 'https://${'x'.repeat(140)}'`,
+    `export const pattern = /${'x'.repeat(140)}/`,
+    `export const template = \`${'x'.repeat(140)}\``,
+    ...[74, 75].map(length => `export function View() {\n  return (\n    <Component value={${'x'.repeat(length - '  return <Component value={} />'.length)}} />\n  )\n}`),
+  ]
+  for (const source of samples) {
+    const [result] = await eslint.lintText(source, { filePath: 'layout.tsx' })
+    const conflicts = result!.messages.filter(message => [
+      'harness/prefer-line-wrap',
+      'style/max-len',
+      'harness/short-jsx-return',
+      'harness/named-import-export-layout',
+      'antfu/consistent-list-newline',
+    ].includes(message.ruleId ?? ''))
+    // 普通长变量声明仍应提示；命名导出行不提示。
+    expect(conflicts).toHaveLength(source.startsWith('const ') ? 1 : 0)
+  }
 })

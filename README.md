@@ -74,7 +74,7 @@ This package implements ten rules. `strict` enables nine by default; `harness/re
 
 | Rule | Default severity | Autofix | Purpose |
 | --- | --- | --- | --- |
-| `harness/short-jsx-return` | off by default | Yes | Keep safely collapsible JSX returns on one line (default limit: 75) |
+| `harness/short-jsx-return` | off by default | Yes | Keep safely collapsible JSX returns on one line (length <75) |
 | `harness/prefer-line-wrap` | warn | No | Suggest wrapping at 75–120 characters; `style/max-len` errors above 120 |
 | `harness/named-import-export-layout` | error | Yes | Normalize named import and export layout |
 | `harness/react-hook-order` | error with React | No | Keep React Hooks in a consistent phase order |
@@ -85,7 +85,7 @@ This package implements ten rules. `strict` enables nine by default; `harness/re
 | `harness/no-redundant-field-alias` | warn | No | Avoid redundant field aliases |
 | `harness/prefer-local-transformation` | warn | No | Name important derived fields before projection |
 
-Line-width checks apply only to `strict`: `harness/prefer-line-wrap` warns at 75–120 characters inclusive, and `style/max-len` reports an error above 120 without a duplicate warning. Lines below 75 receive no width diagnostic and are not forced onto one line. Neither check autofixes. Length includes indentation, URLs, and strings; standalone and trailing comments are ignored, counts Unicode characters, and uses four-column tab stops. `recommended` enables neither check.
+Line-width checks apply only to `strict`: warn at 75–120 characters and error above 120. Neither check autofixes. Both ignore standalone/trailing comments and entire lines containing URLs, strings, template literals, or regular expressions, including other code on those lines. Named imports/exports are exempt from the warning and use their dedicated layout rule. Other lines include indentation and use Unicode character counts with four-column tab stops. `recommended` enables neither check.
 
 An `error` makes ESLint exit with a non-zero status and normally blocks CI. A `warn` reports the issue without blocking CI by default. `off` disables a rule. Override any severity through top-level `rules`.
 
