@@ -4,7 +4,7 @@
 
 本文档说明：
 
-- Harness 自己实现的 9 条 `harness/*` 规则
+- Harness 自己实现的 10 条 `harness/*` 规则
 - `@antfu/eslint-config` 提供的 9 条 `antfu/*` 规则
 - Harness 在 Antfu 基础上新增、关闭或调整的规则
 - 规则级别、配置参数、诊断信息、触发示例和符合示例
@@ -63,11 +63,12 @@ eslint . --fix
 
 ## Harness 自己实现的规则
 
-默认 `strict` 级别如下；`recommended` 只注册插件，不启用这 9 条规则。
+默认 `strict` 级别如下；`recommended` 只注册插件，不启用任何 Harness 内置规则，也不启用 `style/max-len` 行宽策略。
 
 | 规则 | strict | 自动修复 |
 | --- | --- | --- |
-| `harness/short-jsx-return` | error，仅 React | 支持 |
+| `harness/short-jsx-return` | off（可手动启用） | 支持 |
+| `harness/prefer-line-wrap` | warn | 不支持 |
 | `harness/named-import-export-layout` | error | 支持 |
 | `harness/react-hook-order` | error，仅 React | 不支持 |
 | `harness/prefer-cn` | warn | 部分支持 |
@@ -77,11 +78,22 @@ eslint . --fix
 | `harness/no-redundant-field-alias` | warn | 不支持 |
 | `harness/prefer-local-transformation` | warn | 不支持 |
 
+### 统一行宽检查
+
+`strict` 对所有适用源码逐行检查，不依赖 React：
+
+- 小于 60 字符：不产生行宽诊断，不要求折叠为单行。
+- 60～120 字符（包含边界）：`harness/prefer-line-wrap` 报 `warn`，建议换行。
+- 超过 120 字符：`style/max-len` 报 `error`，不重复产生行宽警告。
+
+两条规则都不自动修复。长度包含缩进、注释、字符串和分号，按 Unicode 字符计数，Tab 使用 4 列制表位。默认没有 URL、注释或字符串豁免。
+`harness/prefer-line-wrap` 无配置项；`style/max-len` 配置为 `['error', { code: 120, tabWidth: 4 }]`，由 Harness 工厂的 strict 策略启用。修改硬上限时应同时调整或关闭警告规则。
+
 ### `harness/short-jsx-return`
 
 短 JSX 能放在一行时，不要只为 JSX 添加一层多行括号。
 
-- 默认级别：React 项目下 `error`
+- 默认级别：`off`，仅供手动启用
 - 默认参数：`maxLength: 120`
 - 自动修复：支持
 - 诊断：`useSingleLine`，提示折叠后的实际字符数
@@ -558,7 +570,6 @@ items.map(item => <Item key={item.id} item={item} />)
 启用 React 后会加载 `eslint-plugin-react-hooks` 的 recommended Flat Config。默认将 `useAsyncEffect` 纳入依赖检查，并允许其异步回调；缺失依赖和条件调用仍会报告，普通 `useEffect` 的异步回调仍会报错。此适配按直接调用名称 `useAsyncEffect` 匹配，不追踪导入别名或任意命名空间调用。其中 `react-hooks/exhaustive-deps`、`react-hooks/incompatible-library`、`react-hooks/unsupported-syntax` 为 `warn`，其他启用的 `react-hooks/*` 规则为 `error`。`strict` 还会启用：
 
 - `harness/react-hook-order`
-- `harness/short-jsx-return`
 - JSX 组件声明与函数表达式限制
 
 ### Vue

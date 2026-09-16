@@ -15,9 +15,10 @@ export const strictRules = {
   'harness/no-redundant-field-alias': 'warn',
   'harness/prefer-cn': 'warn',
   'harness/prefer-local-transformation': 'warn',
+  'harness/prefer-line-wrap': 'warn',
   'harness/prefer-property-shorthand': 'warn',
   'harness/react-hook-order': 'error',
-  'harness/short-jsx-return': 'error',
+  'harness/short-jsx-return': 'off',
 } satisfies Linter.RulesRecord
 
 /** -------------------- 配置预设 -------------------- */

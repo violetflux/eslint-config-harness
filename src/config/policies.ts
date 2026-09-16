@@ -63,6 +63,7 @@ export function createStrictPolicyConfigs(options: StrictPolicyOptions): TypedFl
         'node/prefer-global/process': 'off',
         'prefer-promise-reject-errors': 'off',
         'style/eol-last': 'off',
+        'style/max-len': ['error', { code: 120, tabWidth: 4 }],
         'test/consistent-test-it': ['error', { fn: 'test', withinDescribe: 'test' }],
         'test/prefer-lowercase-title': 'off',
         'unused-imports/no-unused-vars': [

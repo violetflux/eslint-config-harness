@@ -261,7 +261,7 @@ describe('harness config factory', () => {
     const strict = configs.find(config => config.name === 'harness/strict')
     const overrides = configs.find(config => config.name === 'harness/user-overrides')
 
-    expect(strict?.rules?.['harness/short-jsx-return']).toBe('error')
+    expect(strict?.rules?.['harness/short-jsx-return']).toBe('off')
     expect(strict?.rules?.['harness/prefer-local-transformation']).toBe('warn')
     expect(overrides?.rules?.['harness/short-jsx-return']).toBe('off')
     expect(configs.indexOf(overrides!)).toBeGreaterThan(configs.indexOf(strict!))
@@ -332,4 +332,24 @@ describe('harness config factory', () => {
 
     expect(tailwind?.files).toEqual(['**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'])
   })
+})
+
+test.each(['strict', 'recommended'] as const)('%s 行宽策略不依赖 React', async (preset) => {
+  const lines = [59, 60, 119, 120, 121].map(length => `//${'x'.repeat(length - 2)}`)
+  const messages = await lintFixture('line-width.js', lines.join('\n'), {
+    preset,
+    react: false,
+    kerros: false,
+    tailwind: false,
+    typescript: false,
+  })
+  expect(messages.filter(message => ['harness/prefer-line-wrap', 'style/max-len'].includes(message.ruleId ?? '')))
+    .toMatchObject(preset === 'recommended'
+      ? []
+      : [
+          { line: 2, severity: 1, ruleId: 'harness/prefer-line-wrap' },
+          { line: 3, severity: 1, ruleId: 'harness/prefer-line-wrap' },
+          { line: 4, severity: 1, ruleId: 'harness/prefer-line-wrap' },
+          { line: 5, severity: 2, ruleId: 'style/max-len' },
+        ])
 })
