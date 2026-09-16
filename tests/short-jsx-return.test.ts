@@ -41,7 +41,7 @@ describe('short-jsx-return', () => {
 
     expect(lint(code)).toMatchObject([{
       fix: expect.any(Object),
-      message: 'This JSX return is only 47 characters on one line. Keep it on one line.',
+      message: 'This JSX has only 35 non-whitespace characters. Keep it on one line.',
       messageId: 'useSingleLine',
       severity: 2,
     }])
@@ -61,11 +61,11 @@ describe('short-jsx-return', () => {
   )
 }`
 
-    expect(lint(code, { maxLength: 20 })).toEqual([])
-    expect(lint(code, { maxLength: 22 })).toMatchObject([{
+    expect(lint(code, { maxLength: 11 })).toEqual([])
+    expect(lint(code, { maxLength: 13 })).toMatchObject([{
       messageId: 'useSingleLine',
     }])
-    expect(fix(code, { maxLength: 22 }).output).toBe(`function Empty() {
+    expect(fix(code, { maxLength: 13 }).output).toBe(`function Empty() {
   return <><Icon /></>
 }`)
   })
@@ -95,7 +95,7 @@ function TextWhitespace() {
   )
 }`
 
-    expect(lint(code)).toEqual([])
+    expect(lint(code)).toMatchObject([{ messageId: 'useSingleLine' }])
   })
 
   test('跳过包含注释或额外括号的 return', () => {
@@ -131,9 +131,34 @@ function NestedParentheses() {
   })
 })
 
-test.each([74, 75, 76])('jsx 默认折叠上限：%i 字符', (length) => {
-  const jsx = `<Component value="${'x'.repeat(length - '  return <Component value="" />'.length)}" />`
+test.each([49, 50, 51])('jsx 去空白后阈值：%i 字符', (length) => {
+  const jsx = `<Component value="${'x'.repeat(length - '<Componentvalue=""/>'.length)}" />`
   const code = `function Message() {\n  return (\n    ${jsx}\n  )\n}`
-  expect(lint(code).map(message => message.messageId)).toEqual(length < 75 ? ['useSingleLine'] : [])
-  expect(fix(code).fixed).toBe(length < 75)
+  expect(lint(code).map(message => message.messageId)).toEqual(length < 50 ? ['useSingleLine'] : [])
+  expect(fix(code).fixed).toBe(length < 50)
+})
+
+test('多行 props 在 return 和独立 JSX 中强制折叠', () => {
+  const code = `const view = <Component\n  value={value}\n/>`
+  expect(fix(code)).toMatchObject({ fixed: true, messages: [], output: 'const view = <Component value={value} />' })
+  expect(fix(`function View() {\n  return (\n    <Component\n      value={value}\n    />\n  )\n}`).output).toBe('function View() {\n  return <Component value={value} />\n}')
+})
+
+test('保留文本和属性值中的有效空格，不合并表达式内部换行', () => {
+  expect(fix('const view = <TooltipContent\n  title="a  b"\n>新 聊天</TooltipContent>').output)
+    .toBe('const view = <TooltipContent title="a  b" >新 聊天</TooltipContent>')
+  for (const code of [
+    'const view = <div>\n hello\n world\n</div>',
+    'const view = <X value={`a\nb`} />',
+    'const view = <X value={() => { return\n value }} />',
+    'const view = <X\n /* comment */ value={x}\n/>',
+  ]) {
+    expect(fix(code).fixed).toBe(false)
+  }
+})
+
+test('只统计 JSX，中文和 Emoji 按 Unicode 字符计数', () => {
+  const code = 'function View() {\n  return (\n    <TooltipContent>新聊天</TooltipContent>\n  )\n}'
+  expect(lint(code)).toMatchObject([{ message: 'This JSX has only 36 non-whitespace characters. Keep it on one line.' }])
+  expect(fix('const view = <X\n  value="😀"\n/>').fixed).toBe(true)
 })

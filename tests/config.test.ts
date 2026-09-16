@@ -36,7 +36,7 @@ describe('harness plugin exports', () => {
       'harness/prefer-line-wrap': 'warn',
       'harness/prefer-property-shorthand': 'warn',
       'harness/react-hook-order': 'error',
-      'harness/short-jsx-return': 'off',
+      'harness/short-jsx-return': 'error',
     })
   })
 })

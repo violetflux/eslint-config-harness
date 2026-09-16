@@ -38,7 +38,7 @@ That is enough to get started. With no options, Harness uses the `strict` preset
 | --- | --- |
 | Antfu | Enables ESLint core, TypeScript, import, style, regexp, unicorn, JSON, YAML, Markdown, and other rules |
 | Harness general additions | Enables three low-noise rules: `no-return-await`, `no-void`, and `require-await` |
-| Harness `strict` | Enables nine Harness rules plus stricter TypeScript, test, and code-organization policies |
+| Harness `strict` | Enables ten Harness rules plus stricter TypeScript, test, and code-organization policies |
 | Project integrations | Detects React, Vue, Tailwind CSS, and Kerros; unused stacks are not forced on |
 
 For the quickest setup, keep `harness()` as-is. Choose `recommended` only when you need a quieter rollout.
@@ -49,7 +49,7 @@ Harness provides two presets:
 
 | Preset | Included | Best for |
 | --- | --- | --- |
-| `strict` | Antfu baseline, three general additions, nine Harness rules, and strict policies | Default; new projects or teams standardizing code style |
+| `strict` | Antfu baseline, three general additions, ten Harness rules, and strict policies | Default; new projects or teams standardizing code style |
 | `recommended` | Antfu baseline, three general additions, and recommended rules from enabled integrations | Existing projects adopting the config gradually |
 
 ```js
@@ -70,11 +70,11 @@ Rules fall into three groups: rules implemented by Harness, rules supplied by An
 
 ### Rules implemented by Harness
 
-This package implements ten rules. `strict` enables nine by default; `harness/react-hook-order` also requires React. `harness/short-jsx-return` is disabled by default and remains available for explicit opt-in.
+This package implements ten rules, enabled by `strict`. `harness/react-hook-order` and `harness/short-jsx-return` additionally require React.
 
 | Rule | Default severity | Autofix | Purpose |
 | --- | --- | --- | --- |
-| `harness/short-jsx-return` | off by default | Yes | Keep safely collapsible JSX returns on one line (length <75) |
+| `harness/short-jsx-return` | error with React | Yes | Safely collapse JSX with fewer than 50 non-whitespace characters, including multiline props |
 | `harness/prefer-line-wrap` | warn | No | Suggest wrapping at 75–120 characters; `style/max-len` errors above 120 |
 | `harness/named-import-export-layout` | error | Yes | Normalize named import and export layout |
 | `harness/react-hook-order` | error with React | No | Keep React Hooks in a consistent phase order |
@@ -176,7 +176,7 @@ export default harness({ typescript: false })
 
 ### React
 
-When React is detected, Harness enables the recommended `react-hooks/*` rules, including async callbacks and dependency checks for `useAsyncEffect` without manual `additionalEffectHooks` configuration. `strict` additionally enables `harness/react-hook-order` and React JSX organization policies.
+When React is detected, Harness enables the recommended `react-hooks/*` rules, including async callbacks and dependency checks for `useAsyncEffect` without manual `additionalEffectHooks` configuration. `strict` additionally enables `harness/react-hook-order`, `harness/short-jsx-return`, and React JSX organization policies.
 
 ```js
 export default harness({

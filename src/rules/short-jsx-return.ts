@@ -1,136 +1,123 @@
 import type { Rule } from 'eslint'
 
-/** -------------------- 类型 -------------------- */
-/** 短 JSX return 规则配置 */
-interface ShortJsxReturnOptions {
-  /** 允许折叠为单行的最大字符数 */
+/** JSX 去空白后的长度上限（不包含此值） */
+interface Options {
+  /** 去空白后的 JSX 必须小于此值才折叠 */
   maxLength?: number
 }
 
-/** return 语句节点 */
-type ReturnNode = Extract<Rule.Node, { type: 'ReturnStatement' }>
-
-/** 可安全折叠的 JSX return */
-interface ShortJsxReturn {
-  /** 折叠后的单行字符数 */
-  length: number
-  /** 替换整个 return 语句的源码 */
-  replacement: string
+/** 带 JSX 字段的 AST 节点 */
+type JsxNode = Rule.Node & {
+  /** JSX 开始标签 */
+  openingElement?: JsxNode
+  /** 开始标签上的属性 */
+  attributes?: JsxNode[]
 }
 
-/** -------------------- 常量 -------------------- */
-/** 默认允许折叠为单行的最大字符数 */
-const defaultMaxLength = 74
-
-/** -------------------- 内部函数 -------------------- */
-/** 读取只含冗余括号和空白的短 JSX return */
-function readShortJsxReturn(
-  node: ReturnNode,
-  context: Rule.RuleContext,
-  maxLength: number,
-): ShortJsxReturn | undefined {
-  const { argument } = node
-
-  if (
-    !argument
-    || !['JSXElement', 'JSXFragment'].includes(argument.type)
-  ) {
+/** 仅合并标签属性之间的空白，保留文本和表达式内部语义 */
+function collapseJsx(node: JsxNode, context: Rule.RuleContext): string | undefined {
+  const source = context.sourceCode
+  if (source.getCommentsInside(node).length)
     return
+  const allowed: Array<readonly [number, number]> = []
+  const protectedRanges: Array<readonly [number, number]> = []
+  /** 收集可折叠的开始标签和不可改动的属性范围 */
+  const visit = (current: JsxNode) => {
+    if (current.openingElement) {
+      allowed.push(source.getRange(current.openingElement))
+      for (const attribute of current.openingElement.attributes ?? [])
+        protectedRanges.push(source.getRange(attribute))
+    }
+    for (const key of source.visitorKeys[current.type] ?? []) {
+      const value = (current as unknown as Record<string, unknown>)[key]
+      for (const child of Array.isArray(value) ? value : [value]) {
+        if (child && typeof child === 'object' && 'type' in child)
+          visit(child as JsxNode)
+      }
+    }
   }
-
-  const { sourceCode } = context
-  const returnToken = sourceCode.getFirstToken(node)
-  const openParen = sourceCode.getTokenBefore(argument)
-  const closeParen = sourceCode.getTokenAfter(argument)
-
-  if (
-    returnToken?.value !== 'return'
-    || openParen?.value !== '('
-    || closeParen?.value !== ')'
-  ) {
-    return
-  }
-
-  const [, returnEnd] = sourceCode.getRange(returnToken)
-  const [argumentStart, argumentEnd] = sourceCode.getRange(argument)
-  const [, nodeEnd] = sourceCode.getRange(node)
-  const before = sourceCode.text.slice(returnEnd, argumentStart)
-  const after = sourceCode.text.slice(argumentEnd, nodeEnd)
-  const jsx = sourceCode.getText(argument)
-  const statement = sourceCode.getText(node)
-
-  // 只处理一层括号及空白，注释、嵌套括号和 JSX 内部换行都保持原样
-  if (
-    !/\r|\n/.test(statement)
-    || /\r|\n/.test(jsx)
-    || !/^[\t ]*\([\t \r\n]*$/.test(before)
-    || !/^[\t \r\n]*\)[\t ]*;?$/.test(after)
-    || sourceCode.getCommentsInside(node).length > 0
-  ) {
-    return
-  }
-
-  const hasSemicolon = sourceCode.getLastToken(node)?.value === ';'
-  const prefix = sourceCode.lines[returnToken.loc.start.line - 1]!.slice(0, returnToken.loc.start.column)
-  const singleLine = `${prefix}return ${jsx}${hasSemicolon ? ';' : ''}`
-  let extraWidth = 0
-  for (let offset = 0; offset < singleLine.length; offset++) {
-    if (singleLine[offset] === '\t')
-      extraWidth += 4 - (offset + extraWidth) % 4 - 1
-  }
-  const length = Array.from(singleLine).length + extraWidth
-
-  if (length > maxLength)
-    return
-
-  return {
-    length,
-    replacement: `return ${jsx}${hasSemicolon ? ';' : ''}`,
-  }
+  visit(node)
+  const text = source.getText(node)
+  const [start] = source.getRange(node)
+  let safe = true
+  const result = text.replace(/[\t \r\n]*[\r\n][\t \r\n]*/g, (whitespace, offset: number) => {
+    const from = start + offset
+    const to = from + whitespace.length
+    if (!allowed.some(([a, b]) => a <= from && to <= b)
+      || protectedRanges.some(([a, b]) => a < to && from < b)) {
+      safe = false
+    }
+    return ' '
+  })
+  return safe ? result : undefined
 }
 
-/** -------------------- 规则 -------------------- */
-/** 将可安全单行化的短 JSX return 折叠为一行 */
+/** 让小于阈值的 JSX 安全保持单行，包括 return、赋值和嵌套 JSX */
 export const rule: Rule.RuleModule = {
   meta: {
-    docs: {
-      description: 'Keep short JSX returns on one line',
-    },
+    docs: { description: 'Keep JSX with fewer than 50 non-whitespace characters on one line' },
     fixable: 'code',
     messages: {
-      useSingleLine: 'This JSX return is only {{length}} characters on one line. Keep it on one line.',
+      useSingleLine: 'This JSX has only {{length}} non-whitespace characters. Keep it on one line.',
     },
     schema: [{
-      additionalProperties: false,
-      properties: {
-        maxLength: {
-          default: defaultMaxLength,
-          minimum: 1,
-          type: 'integer',
-        },
-      },
       type: 'object',
+      additionalProperties: false,
+      properties: { maxLength: { type: 'integer', minimum: 1, default: 50 } },
     }],
     type: 'layout',
   },
   create(context) {
-    const options = (context.options[0] ?? {}) as ShortJsxReturnOptions
-    const maxLength = options.maxLength ?? defaultMaxLength
-
+    const limit = ((context.options[0] ?? {}) as Options).maxLength ?? 50
+    const source = context.sourceCode
+    const handled = new Set<Rule.Node>()
+    /** 检查 JSX 并在适用时同时去掉 return 的外围括号 */
+    const inspect = (node: JsxNode, returnNode?: Rule.Node) => {
+      const text = source.getText(node)
+      const length = Array.from(text.replace(/\s/gu, '')).length
+      if (length >= limit)
+        return
+      const jsx = collapseJsx(node, context)
+      if (jsx === undefined)
+        return
+      let target: Rule.Node = node
+      let replacement = jsx
+      if (returnNode) {
+        if (source.getCommentsInside(returnNode).length)
+          return
+        const token = source.getFirstToken(returnNode)!
+        const before = source.text.slice(source.getRange(token)[1], source.getRange(node)[0])
+        const after = source.text.slice(source.getRange(node)[1], source.getRange(returnNode)[1])
+        const parenthesized = /^[\t ]*\([\t \r\n]*$/.test(before) && /^[\t \r\n]*\)[\t ]*;?$/.test(after)
+        const bare = /^[\t ]*$/.test(before) && /^[\t ]*;?$/.test(after)
+        if (!parenthesized && !bare)
+          return
+        target = returnNode
+        replacement = `return ${jsx}${source.getLastToken(returnNode)?.value === ';' ? ';' : ''}`
+      }
+      if (!/[\r\n]/.test(source.getText(target)))
+        return
+      context.report({
+        node: target,
+        messageId: 'useSingleLine',
+        data: { length },
+        fix: fixer => fixer.replaceText(target, replacement),
+      })
+    }
+    /** 单独出现的 JSX 也应用相同规则 */
+    const inspectJsx = (node: JsxNode) => {
+      if (!handled.has(node))
+        inspect(node)
+    }
     return {
       ReturnStatement(node) {
-        const result = readShortJsxReturn(node as ReturnNode, context, maxLength)
-
-        if (!result)
-          return
-
-        context.report({
-          data: { length: result.length },
-          fix: fixer => fixer.replaceText(node, result.replacement),
-          messageId: 'useSingleLine',
-          node,
-        })
+        if (node.argument && ['JSXElement', 'JSXFragment'].includes(node.argument.type)) {
+          handled.add(node.argument as Rule.Node)
+          inspect(node.argument as JsxNode, node)
+        }
       },
+      JSXElement: inspectJsx as never,
+      JSXFragment: inspectJsx as never,
     }
   },
 }

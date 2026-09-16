@@ -67,7 +67,7 @@ eslint . --fix
 
 | 规则 | strict | 自动修复 |
 | --- | --- | --- |
-| `harness/short-jsx-return` | off（可手动启用） | 支持 |
+| `harness/short-jsx-return` | error，仅 React | 支持 |
 | `harness/prefer-line-wrap` | warn | 不支持 |
 | `harness/named-import-export-layout` | error | 支持 |
 | `harness/react-hook-order` | error，仅 React | 不支持 |
@@ -108,36 +108,39 @@ eslint . --fix
 
 ### `harness/short-jsx-return`
 
-短 JSX 折叠后小于 75 字符时才要求单行，包含缩进和分号。恰好 75 不折叠，避免与行宽警告重叠。
+JSX 本身去掉所有空白后少于 50 个 Unicode 字符，且能安全合并时，必须保持单行。统计不包含 `return`、外围括号和缩进；恰好 50 不强制折叠。统计时去空白不代表修复时删除文本空格。
 
-- 默认级别：`off`，仅供手动启用
-- 默认参数：`maxLength: 74`
+- 默认级别：`strict` 且启用 React 时为 `error`；`recommended` 不启用
+- 默认参数：`maxLength: 50`（不包含此值）
 - 自动修复：支持
-- 诊断：`useSingleLine`，提示折叠后的实际字符数
+- 诊断：`useSingleLine`，提示 JSX 去空白后的字符数
+- 适用范围：return、赋值、箭头函数和嵌套 JSX；保留原规则 ID 兼容配置
 
 | 参数 | 类型 | 默认值 | 作用 |
 | --- | --- | --- | --- |
-| `maxLength` | 正整数 | `74` | `return JSX` 折叠为一行后的最大长度 |
+| `maxLength` | 正整数 | `50` | JSX 去空白后的字符数必须小于此值才折叠 |
 
-会触发规则：
+例如以下写法会报错：
 
 ```jsx
-function Message() {
+function View() {
   return (
-    <MessageListContent key={threadId} />
+    <Component
+      value={value}
+    />
   )
 }
 ```
 
-符合规则：
+自动修复为：
 
 ```jsx
-function Message() {
-  return <MessageListContent key={threadId} />
+function View() {
+  return <Component value={value} />
 }
 ```
 
-以下情况不会折叠：JSX 自身需要多行、包含注释、存在额外嵌套括号，或折叠后超过 `maxLength`。
+`<TooltipContent>新聊天</TooltipContent>` 为 36 字符，也满足阈值。修复只合并开始标签属性之间的换行，并可移除 return 的一层外围括号；保留文本和属性值中的有效空格。包含注释、JSX 文本换行、属性表达式内部换行或 return 额外嵌套括号时，不强行合并。
 
 ### `harness/named-import-export-layout`
 

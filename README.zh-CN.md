@@ -38,7 +38,7 @@ pnpm exec eslint .
 | --- | --- |
 | Antfu | 启用 ESLint 核心、TypeScript、import、style、regexp、unicorn、JSON、YAML、Markdown 等规则 |
 | Harness 通用补充 | 启用 3 条低争议规则：`no-return-await`、`no-void`、`require-await` |
-| Harness `strict` | 启用 9 条 Harness 内置规则，并补充更严格的 TypeScript、测试和代码组织策略 |
+| Harness `strict` | 启用 10 条 Harness 内置规则，并补充更严格的 TypeScript、测试和代码组织策略 |
 | 项目集成 | 自动识别 React、Vue、Tailwind CSS 和 Kerros；没有安装或使用的技术栈不会强行启用 |
 
 如果你只想快速开始，保持 `harness()` 即可。需要降低接入噪音时，再选择 `recommended`。
@@ -49,7 +49,7 @@ Harness 提供两个预设：
 
 | 预设 | 包含内容 | 适合场景 |
 | --- | --- | --- |
-| `strict` | Antfu 基线、3 条通用补充规则、9 条 Harness 内置规则和严格策略 | 默认值；新项目或希望统一代码风格的项目 |
+| `strict` | Antfu 基线、3 条通用补充规则、10 条 Harness 内置规则和严格策略 | 默认值；新项目或希望统一代码风格的项目 |
 | `recommended` | Antfu 基线、3 条通用补充规则和已启用集成的推荐规则 | 旧项目渐进接入，先减少新增警告和错误 |
 
 ```js
@@ -70,11 +70,11 @@ const recommendedConfig = harness({ preset: 'recommended' })
 
 ### Harness 自己写的规则
 
-本包实现 10 条规则，`strict` 默认启用其中 9 条；`harness/react-hook-order` 还要求开启 React 集成。`harness/short-jsx-return` 默认关闭，仅供手动启用。
+本包实现 10 条规则，在 `strict` 中默认启用；`harness/react-hook-order` 和 `harness/short-jsx-return` 还要求开启 React 集成。
 
 | 规则 | 默认级别 | 自动修复 | 作用 |
 | --- | --- | --- | --- |
-| `harness/short-jsx-return` | 默认 off | 支持 | 可安全折叠的短 JSX return 保持单行（长度 <75） |
+| `harness/short-jsx-return` | React 下 error | 支持 | JSX 去空白后 <50 字符时安全折叠，包含多行 props |
 | `harness/prefer-line-wrap` | warn | 不支持 | 75～120 字符建议换行；超过 120 由 `style/max-len` 报 error |
 | `harness/named-import-export-layout` | error | 支持 | 统一命名导入和导出的布局 |
 | `harness/react-hook-order` | React 下 error | 不支持 | 统一 React Hook 的阶段顺序 |
@@ -174,7 +174,7 @@ export default harness({ typescript: false })
 
 ### React
 
-检测到 React 时会启用 `react-hooks/*` 推荐规则，默认支持 `useAsyncEffect` 的异步回调和依赖检查，无需手动配置 `additionalEffectHooks`。`strict` 还会启用 `harness/react-hook-order` 和 React JSX 代码组织策略。
+检测到 React 时会启用 `react-hooks/*` 推荐规则，默认支持 `useAsyncEffect` 的异步回调和依赖检查，无需手动配置 `additionalEffectHooks`。`strict` 还会启用 `harness/react-hook-order`、`harness/short-jsx-return` 和 React JSX 代码组织策略。
 
 ```js
 export default harness({

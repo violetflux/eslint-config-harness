@@ -261,7 +261,7 @@ describe('harness config factory', () => {
     const strict = configs.find(config => config.name === 'harness/strict')
     const overrides = configs.find(config => config.name === 'harness/user-overrides')
 
-    expect(strict?.rules?.['harness/short-jsx-return']).toBe('off')
+    expect(strict?.rules?.['harness/short-jsx-return']).toBe('error')
     expect(strict?.rules?.['harness/prefer-local-transformation']).toBe('warn')
     expect(overrides?.rules?.['harness/short-jsx-return']).toBe('off')
     expect(configs.indexOf(overrides!)).toBeGreaterThan(configs.indexOf(strict!))
@@ -408,4 +408,19 @@ test('行宽与导入导出、列表换行和 JSX 折叠兼容', async () => {
     // 普通长变量声明仍应提示；命名导出行不提示。
     expect(conflicts).toHaveLength(source.startsWith('const ') ? 1 : 0)
   }
+})
+
+test.each(['strict', 'recommended'] as const)('%s 短 JSX 默认启用范围与自动修复', async (preset) => {
+  const eslint = new ESLint({
+    overrideConfigFile: true,
+    fix: true,
+    overrideConfig: await resolveConfig({ preset, react: true, tailwind: false, kerros: false }),
+  })
+  const code = 'export function View() {\n  return (\n    <Component\n      value={value}\n    />\n  )\n}'
+  const [result] = await eslint.lintText(code, { filePath: 'short-layout.tsx' })
+  const output = result!.output ?? code
+  expect(output.includes('return <Component value={value} />')).toBe(preset === 'strict')
+  expect(result!.messages.filter(message => /short-jsx-return|prefer-line-wrap|max-len|consistent-list-newline/.test(message.ruleId ?? ''))).toEqual([])
+  const [second] = await eslint.lintText(output, { filePath: 'short-layout.tsx' })
+  expect(second!.output ?? output).toBe(output)
 })
