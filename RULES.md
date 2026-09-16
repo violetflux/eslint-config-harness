@@ -68,8 +68,8 @@ eslint . --fix
 | 规则 | strict | 自动修复 |
 | --- | --- | --- |
 | `harness/short-jsx-return` | error，仅 React | 支持 |
-| `harness/prefer-line-wrap` | warn | 不支持 |
-| `harness/max-line-length` | error | 不支持 |
+| `harness/prefer-line-wrap` | off | 不支持 |
+| `harness/max-line-length` | off | 不支持 |
 | `harness/named-import-export-layout` | error | 支持 |
 | `harness/react-hook-order` | error，仅 React | 不支持 |
 | `harness/prefer-cn` | warn | 部分支持 |
@@ -81,7 +81,7 @@ eslint . --fix
 
 ### 统一行宽检查
 
-`strict` 对所有适用源码逐行检查，不依赖 React：
+两条通用行宽规则默认关闭，`strict` 和 `recommended` 都不自动启用。手动开启后对适用源码逐行检查，不依赖 React：
 
 - 小于 50 字符：不产生行宽诊断，不要求折叠为单行。
 - 50～100 字符（包含边界）：`harness/prefer-line-wrap` 报 `warn`，建议换行。
@@ -91,11 +91,24 @@ eslint . --fix
 命名 import/export 声明跳过通用警告，由 `harness/named-import-export-layout` 管理；`export const` 等普通声明仍检查。
 两档计数均先移除整行所有普通空格（U+0020）和 Tab，包括行首缩进与代码之间的空白，再按 Unicode 字符计数。分号、括号、运算符等仍计入；不会实际删除源码中的空格。
 
-`harness/prefer-line-wrap` 和 `harness/max-line-length` 共用计数和豁免逻辑，均无配置项，在 strict 预设中分别为 warn 和 error。Harness 工厂关闭 `style/max-len`，避免其包含空格的计数方式重复报错。原先针对 `style/max-len` 的自定义配置如需继续控制硬上限，应迁移到新的规则策略。
+`harness/prefer-line-wrap` 和 `harness/max-line-length` 共用计数和豁免逻辑，均无配置项，在 strict 预设中均为 off。Harness 工厂关闭 `style/max-len`，避免其包含空格的计数方式重复报错。原先针对 `style/max-len` 的自定义配置如需继续控制硬上限，应迁移到新的规则策略。
 
 此变更针对通用行宽检查；命名导入导出与 JSX 的专用布局阈值保持各自定义。列表换行应从第一个成员开始，避免 `antfu/consistent-list-newline` 合回单行。
 
 单行 JSX 本身去空白后 <50 字符时，通用警告跳过其所在行，避免 `return` 等外围代码导致折叠后反而要求换行；超过 100 的硬上限仍然检查。
+
+手动开启：
+
+```js
+harness({
+  rules: {
+    'harness/prefer-line-wrap': 'warn',
+    'harness/max-line-length': 'error',
+  },
+})
+```
+
+关闭通用行宽检查不影响 JSX 短内容折叠和命名导入导出的专用布局规则。
 
 ### `harness/short-jsx-return`
 

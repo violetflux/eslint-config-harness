@@ -38,7 +38,7 @@ pnpm exec eslint .
 | --- | --- |
 | Antfu | 启用 ESLint 核心、TypeScript、import、style、regexp、unicorn、JSON、YAML、Markdown 等规则 |
 | Harness 通用补充 | 启用 3 条低争议规则：`no-return-await`、`no-void`、`require-await` |
-| Harness `strict` | 启用 11 条 Harness 内置规则，并补充更严格的 TypeScript、测试和代码组织策略 |
+| Harness `strict` | 启用 9 条 Harness 内置规则，并补充更严格的 TypeScript、测试和代码组织策略 |
 | 项目集成 | 自动识别 React、Vue、Tailwind CSS 和 Kerros；没有安装或使用的技术栈不会强行启用 |
 
 如果你只想快速开始，保持 `harness()` 即可。需要降低接入噪音时，再选择 `recommended`。
@@ -49,7 +49,7 @@ Harness 提供两个预设：
 
 | 预设 | 包含内容 | 适合场景 |
 | --- | --- | --- |
-| `strict` | Antfu 基线、3 条通用补充规则、11 条 Harness 内置规则和严格策略 | 默认值；新项目或希望统一代码风格的项目 |
+| `strict` | Antfu 基线、3 条通用补充规则、9 条 Harness 内置规则和严格策略 | 默认值；新项目或希望统一代码风格的项目 |
 | `recommended` | Antfu 基线、3 条通用补充规则和已启用集成的推荐规则 | 旧项目渐进接入，先减少新增警告和错误 |
 
 ```js
@@ -70,13 +70,13 @@ const recommendedConfig = harness({ preset: 'recommended' })
 
 ### Harness 自己写的规则
 
-本包实现 11 条规则，在 `strict` 中默认启用；`harness/react-hook-order` 和 `harness/short-jsx-return` 还要求开启 React 集成。
+本包实现 11 条规则，`strict` 默认启用其中 9 条，两条通用行宽规则默认关闭；`harness/react-hook-order` 和 `harness/short-jsx-return` 还要求开启 React 集成。
 
 | 规则 | 默认级别 | 自动修复 | 作用 |
 | --- | --- | --- | --- |
 | `harness/short-jsx-return` | React 下 error | 支持 | JSX 去空白后 <50 字符时安全折叠，包含多行 props |
-| `harness/prefer-line-wrap` | warn | 不支持 | 50～100 字符建议换行；超过 100 由 `harness/max-line-length` 报 error |
-| `harness/max-line-length` | error | 不支持 | 去掉空格和 Tab 后，单行最多 100 字符 |
+| `harness/prefer-line-wrap` | off | 不支持 | 50～100 字符建议换行；超过 100 由 `harness/max-line-length` 报 error |
+| `harness/max-line-length` | off | 不支持 | 去掉空格和 Tab 后，单行最多 100 字符 |
 | `harness/named-import-export-layout` | error | 支持 | 统一命名导入和导出的布局 |
 | `harness/react-hook-order` | React 下 error | 不支持 | 统一 React Hook 的阶段顺序 |
 | `harness/prefer-cn` | warn | 部分支持 | class 组合优先使用 `cn` |
@@ -86,7 +86,7 @@ const recommendedConfig = harness({ preset: 'recommended' })
 | `harness/no-redundant-field-alias` | warn | 不支持 | 减少冗余字段别名 |
 | `harness/prefer-local-transformation` | warn | 不支持 | 建议先命名关键派生字段再投影 |
 
-行宽检查仅在 `strict` 中启用：50～100 字符警告，超过 100 报错，均不自动修复。两档都忽略独立/行尾注释；包含 URL、字符串、模板字符串或正则的整行豁免（同一行的其他代码也不检查）。命名导入导出跳过通用警告，由专用布局规则管理。两档均先移除整行中的普通空格和 Tab（包括缩进），再按 Unicode 字符计数。工厂关闭 `style/max-len`，避免计数冲突。去空白后 <50 字符的单行 JSX 所在行跳过警告，避免与强制折叠冲突；硬上限仍检查。`recommended` 不启用这两条规则。
+两条通用行宽规则默认关闭（包括 `strict`）。手动启用后，50～100 字符警告，超过 100 报错，均不自动修复。两档都忽略独立/行尾注释；包含 URL、字符串、模板字符串或正则的整行豁免（同一行的其他代码也不检查）。命名导入导出跳过通用警告，由专用布局规则管理。两档均先移除整行中的普通空格和 Tab（包括缩进），再按 Unicode 字符计数。工厂关闭 `style/max-len`，避免计数冲突。去空白后 <50 字符的单行 JSX 所在行跳过警告，避免与强制折叠冲突；硬上限仍检查。`recommended` 不启用这两条规则。
 
 这里的 `error` 会让 ESLint 以非零状态退出，通常会阻止 CI；`warn` 会显示问题但默认不阻止 CI；`off` 表示关闭规则。项目可以在顶层 `rules` 中修改级别。
 

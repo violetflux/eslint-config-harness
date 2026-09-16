@@ -334,7 +334,7 @@ describe('harness config factory', () => {
   })
 })
 
-test.each(['strict', 'recommended'] as const)('%s 行宽策略不依赖 React', async (preset) => {
+test.each(['strict', 'recommended'] as const)('%s 默认不启用通用行宽检查', async (preset) => {
   const lines = [49, 50, 99, 100, 101].map(length => 'x'.repeat(length))
   const messages = await lintFixture('line-width.js', lines.join('\n'), {
     preset,
@@ -344,14 +344,7 @@ test.each(['strict', 'recommended'] as const)('%s 行宽策略不依赖 React', 
     typescript: false,
   })
   expect(messages.filter(message => ['harness/prefer-line-wrap', 'harness/max-line-length'].includes(message.ruleId ?? '')))
-    .toMatchObject(preset === 'recommended'
-      ? []
-      : [
-          { line: 2, severity: 1, ruleId: 'harness/prefer-line-wrap' },
-          { line: 3, severity: 1, ruleId: 'harness/prefer-line-wrap' },
-          { line: 4, severity: 1, ruleId: 'harness/prefer-line-wrap' },
-          { line: 5, severity: 2, ruleId: 'harness/max-line-length' },
-        ])
+    .toEqual([])
 })
 
 test('严格行宽检查忽略注释但保留行尾注释前的代码检查', async () => {
@@ -363,6 +356,7 @@ test('严格行宽检查忽略注释但保留行尾注释前的代码检查', as
     `${'x'.repeat(101)} //${'x'.repeat(160)}`,
   ]
   const messages = await lintFixture('comments.js', lines.join('\n'), {
+    rules: { 'harness/prefer-line-wrap': 'warn', 'harness/max-line-length': 'error' },
     react: false,
     kerros: false,
     tailwind: false,
@@ -383,7 +377,7 @@ test('行宽与导入导出、列表换行和 JSX 折叠兼容', async () => {
       react: true,
       kerros: false,
       tailwind: false,
-      rules: { 'harness/short-jsx-return': 'error' },
+      rules: { 'harness/short-jsx-return': 'error', 'harness/prefer-line-wrap': 'warn', 'harness/max-line-length': 'error' },
     }),
   })
   const longName = 'x'.repeat(80)

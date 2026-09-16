@@ -38,7 +38,7 @@ That is enough to get started. With no options, Harness uses the `strict` preset
 | --- | --- |
 | Antfu | Enables ESLint core, TypeScript, import, style, regexp, unicorn, JSON, YAML, Markdown, and other rules |
 | Harness general additions | Enables three low-noise rules: `no-return-await`, `no-void`, and `require-await` |
-| Harness `strict` | Enables eleven Harness rules plus stricter TypeScript, test, and code-organization policies |
+| Harness `strict` | Enables nine Harness rules plus stricter TypeScript, test, and code-organization policies |
 | Project integrations | Detects React, Vue, Tailwind CSS, and Kerros; unused stacks are not forced on |
 
 For the quickest setup, keep `harness()` as-is. Choose `recommended` only when you need a quieter rollout.
@@ -49,7 +49,7 @@ Harness provides two presets:
 
 | Preset | Included | Best for |
 | --- | --- | --- |
-| `strict` | Antfu baseline, three general additions, eleven Harness rules, and strict policies | Default; new projects or teams standardizing code style |
+| `strict` | Antfu baseline, three general additions, nine Harness rules, and strict policies | Default; new projects or teams standardizing code style |
 | `recommended` | Antfu baseline, three general additions, and recommended rules from enabled integrations | Existing projects adopting the config gradually |
 
 ```js
@@ -70,13 +70,13 @@ Rules fall into three groups: rules implemented by Harness, rules supplied by An
 
 ### Rules implemented by Harness
 
-This package implements eleven rules, enabled by `strict`. `harness/react-hook-order` and `harness/short-jsx-return` additionally require React.
+This package implements eleven rules; `strict` enables nine by default. The two general line-width rules are disabled by default. `harness/react-hook-order` and `harness/short-jsx-return` additionally require React.
 
 | Rule | Default severity | Autofix | Purpose |
 | --- | --- | --- | --- |
 | `harness/short-jsx-return` | error with React | Yes | Safely collapse JSX with fewer than 50 non-whitespace characters, including multiline props |
-| `harness/prefer-line-wrap` | warn | No | Suggest wrapping at 50–100 characters; `harness/max-line-length` errors above 100 |
-| `harness/max-line-length` | error | No | Limit each line to 100 characters after removing spaces and tabs |
+| `harness/prefer-line-wrap` | off | No | Suggest wrapping at 50–100 characters; `harness/max-line-length` errors above 100 |
+| `harness/max-line-length` | off | No | Limit each line to 100 characters after removing spaces and tabs |
 | `harness/named-import-export-layout` | error | Yes | Normalize named import and export layout |
 | `harness/react-hook-order` | error with React | No | Keep React Hooks in a consistent phase order |
 | `harness/prefer-cn` | warn | Partial | Prefer `cn` for class composition |
@@ -86,7 +86,7 @@ This package implements eleven rules, enabled by `strict`. `harness/react-hook-o
 | `harness/no-redundant-field-alias` | warn | No | Avoid redundant field aliases |
 | `harness/prefer-local-transformation` | warn | No | Name important derived fields before projection |
 
-Line-width checks apply only to `strict`: warn at 50–100 characters and error above 100. Neither check autofixes. Both ignore standalone/trailing comments and entire lines containing URLs, strings, template literals, or regular expressions, including other code on those lines. Named imports/exports are exempt from the warning and use their dedicated layout rule. Both tiers count Unicode characters after removing ASCII spaces and tabs everywhere on the line, including indentation. The factory disables `style/max-len` to avoid conflicting counts. Single-line JSX with fewer than 50 non-whitespace characters is exempt from the warning to avoid conflicts with JSX folding; the hard limit still applies. `recommended` enables neither check.
+Both general line-width checks are disabled by default, including in `strict`. When explicitly enabled, they warn at 50–100 characters and error above 100. Neither check autofixes. Both ignore standalone/trailing comments and entire lines containing URLs, strings, template literals, or regular expressions, including other code on those lines. Named imports/exports are exempt from the warning and use their dedicated layout rule. Both tiers count Unicode characters after removing ASCII spaces and tabs everywhere on the line, including indentation. The factory disables `style/max-len` to avoid conflicting counts. Single-line JSX with fewer than 50 non-whitespace characters is exempt from the warning to avoid conflicts with JSX folding; the hard limit still applies. `recommended` enables neither check.
 
 An `error` makes ESLint exit with a non-zero status and normally blocks CI. A `warn` reports the issue without blocking CI by default. `off` disables a rule. Override any severity through top-level `rules`.
 
