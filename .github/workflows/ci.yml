@@ -11,6 +11,9 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [24, 26]
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
@@ -18,7 +21,7 @@ jobs:
           version: 11.18.0
       - uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: ${{ matrix.node-version }}
           package-manager-cache: false
       - run: pnpm install --frozen-lockfile
       - run: pnpm check

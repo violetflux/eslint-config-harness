@@ -28,8 +28,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "engines": {
-    "node": ">=24.18.1 <25",
-    "pnpm": ">=11 <12"
+    "node": ">=24.18.1",
+    "pnpm": ">=11"
   },
   "packageManager": "pnpm@11.18.0",
   "scripts": {
@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
-    "eslint": "^10.8.0",
+    "eslint": "^10.15.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
